@@ -1,0 +1,307 @@
+const express = require("express")
+const { body, validationResult } = require("express-validator")
+const Blog = require("../models/Blog")
+const Category = require("../models/Category")
+const { auth, adminAuth } = require("../middleware/auth")
+
+const router = express.Router()
+
+// @route   GET /api/blogs
+// @desc    Get all published blogs with pagination
+// @access  Public
+router.get("/", async (req, res) => {
+  try {
+    const page = Number.parseInt(req.query.page) || 1
+    const limit = Number.parseInt(req.query.limit) || 10
+    const category = req.query.category
+    const search = req.query.search
+    const sort = req.query.sort || "-publishedAt"
+
+    // Build query
+    const query = { status: "published" }
+
+    if (category) {
+      query.category = category
+    }
+
+    if (search) {
+      query.$text = { $search: search }
+    }
+
+    const skip = (page - 1) * limit
+
+    const blogs = await Blog.find(query)
+      .populate("category", "name slug color")
+      .populate("author", "username avatar")
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .select("-content") // Exclude full content for list view
+
+    const total = await Blog.countDocuments(query)
+
+    res.json({
+      blogs,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total,
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
+      },
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Server error" })
+  }
+})
+
+// @route   GET /api/blogs/admin
+// @desc    Get all blogs for admin
+// @access  Private (Admin)
+router.get("/admin", adminAuth, async (req, res) => {
+  try {
+    const page = Number.parseInt(req.query.page) || 1
+    const limit = Number.parseInt(req.query.limit) || 10
+    const status = req.query.status
+    const category = req.query.category
+
+    const query = {}
+
+    if (status) {
+      query.status = status
+    }
+
+    if (category) {
+      query.category = category
+    }
+
+    const skip = (page - 1) * limit
+
+    const blogs = await Blog.find(query)
+      .populate("category", "name slug color")
+      .populate("author", "username")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select("-content")
+
+    const total = await Blog.countDocuments(query)
+
+    res.json({
+      blogs,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total,
+      },
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Server error" })
+  }
+})
+
+// @route   GET /api/blogs/:slug
+// @desc    Get single blog by slug
+// @access  Public
+router.get("/:slug", async (req, res) => {
+  try {
+    const blog = await Blog.findOne({
+      slug: req.params.slug,
+      status: "published",
+    })
+      .populate("category", "name slug color")
+      .populate("author", "username avatar")
+
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" })
+    }
+
+    // Increment views
+    blog.views += 1
+    await blog.save()
+
+    res.json(blog)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Server error" })
+  }
+})
+
+// @route   POST /api/blogs
+// @desc    Create new blog
+// @access  Private (Admin)
+router.post(
+  "/",
+  [
+    adminAuth,
+    body("title").notEmpty().withMessage("Title is required"),
+    body("content").notEmpty().withMessage("Content is required"),
+    body("category").notEmpty().withMessage("Category is required"),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() })
+      }
+
+      const { title, content, excerpt, category, tags, status, featuredImage, seo } = req.body
+
+      // Verify category exists
+      const categoryExists = await Category.findById(category)
+      if (!categoryExists) {
+        return res.status(400).json({ message: "Invalid category" })
+      }
+
+      const blog = new Blog({
+        title,
+        content,
+        excerpt,
+        category,
+        author: req.user._id,
+        tags: tags || [],
+        status: status || "draft",
+        featuredImage,
+        seo,
+      })
+
+      await blog.save()
+
+      const populatedBlog = await Blog.findById(blog._id)
+        .populate("category", "name slug color")
+        .populate("author", "username")
+
+      res.status(201).json(populatedBlog)
+    } catch (error) {
+      console.error(error)
+      res.status(500).json({ message: "Server error" })
+    }
+  },
+)
+
+// @route   PUT /api/blogs/:id
+// @desc    Update blog
+// @access  Private (Admin)
+router.put(
+  "/:id",
+  [
+    adminAuth,
+    body("title").notEmpty().withMessage("Title is required"),
+    body("content").notEmpty().withMessage("Content is required"),
+    body("category").notEmpty().withMessage("Category is required"),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() })
+      }
+
+      const blog = await Blog.findById(req.params.id)
+      if (!blog) {
+        return res.status(404).json({ message: "Blog not found" })
+      }
+
+      const { title, content, excerpt, category, tags, status, featuredImage, seo } = req.body
+
+      // Verify category exists
+      const categoryExists = await Category.findById(category)
+      if (!categoryExists) {
+        return res.status(400).json({ message: "Invalid category" })
+      }
+
+      // Update blog fields
+      blog.title = title
+      blog.content = content
+      blog.excerpt = excerpt
+      blog.category = category
+      blog.tags = tags || []
+      blog.status = status || blog.status
+      blog.featuredImage = featuredImage || blog.featuredImage
+      blog.seo = seo || blog.seo
+
+      await blog.save()
+
+      const populatedBlog = await Blog.findById(blog._id)
+        .populate("category", "name slug color")
+        .populate("author", "username")
+
+      res.json(populatedBlog)
+    } catch (error) {
+      console.error(error)
+      res.status(500).json({ message: "Server error" })
+    }
+  },
+)
+
+// @route   DELETE /api/blogs/:id
+// @desc    Delete blog
+// @access  Private (Admin)
+router.delete("/:id", adminAuth, async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id)
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" })
+    }
+
+    await Blog.findByIdAndDelete(req.params.id)
+    res.json({ message: "Blog deleted successfully" })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Server error" })
+  }
+})
+
+// @route   GET /api/blogs/:id/related
+// @desc    Get related blogs based on category and tags
+// @access  Public
+router.get("/:id/related", async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id).populate("category")
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" })
+    }
+
+    // Find related blogs by category and tags
+    const relatedBlogs = await Blog.find({
+      _id: { $ne: blog._id },
+      status: "published",
+      $or: [{ category: blog.category._id }, { tags: { $in: blog.tags } }],
+    })
+      .populate("category", "name slug color")
+      .populate("author", "username avatar")
+      .sort({ views: -1, publishedAt: -1 })
+      .limit(4)
+      .select("-content")
+
+    res.json(relatedBlogs)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Server error" })
+  }
+})
+
+// @route   GET /api/blogs/trending
+// @desc    Get trending blogs based on views and recent activity
+// @access  Public
+router.get("/trending", async (req, res) => {
+  try {
+    const limit = Number.parseInt(req.query.limit) || 6
+
+    const trendingBlogs = await Blog.find({ status: "published" })
+      .populate("category", "name slug color")
+      .populate("author", "username avatar")
+      .sort({ views: -1, publishedAt: -1 })
+      .limit(limit)
+      .select("-content")
+
+    res.json(trendingBlogs)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Server error" })
+  }
+})
+
+module.exports = router
