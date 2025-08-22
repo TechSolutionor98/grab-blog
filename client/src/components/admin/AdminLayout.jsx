@@ -3,8 +3,7 @@
 import React from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "../../contexts/AuthContext"
-import { LayoutDashboard, FileText, FolderOpen, LogOut, Menu, X, User } from "lucide-react"
-
+import { LayoutDashboard, FileText, FolderOpen, LogOut, Menu, X, User, Tag, Building } from "lucide-react"
 
 const AdminLayout = ({ children }) => {
   const { user, logout } = useAuth()
@@ -34,6 +33,16 @@ const AdminLayout = ({ children }) => {
       icon: FolderOpen,
       label: "Categories",
     },
+    {
+      path: "/admin/topics",
+      icon: Tag,
+      label: "Topics",
+    },
+    {
+      path: "/admin/brands",
+      icon: Building,
+      label: "Brands",
+    },
   ]
 
   const isActive = (path, exact = false) => {
@@ -46,13 +55,15 @@ const AdminLayout = ({ children }) => {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      }`}>
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">Admin Panel</h2>
-          <button 
-            className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors" 
+          <button
+            className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
             onClick={() => setSidebarOpen(false)}
           >
             <X size={20} />
@@ -92,7 +103,7 @@ const AdminLayout = ({ children }) => {
               <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
             </div>
           </div>
-          <button 
+          <button
             className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
             onClick={handleLogout}
           >
@@ -106,16 +117,16 @@ const AdminLayout = ({ children }) => {
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         {/* Top Bar */}
         <header className="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200 shadow-sm">
-          <button 
-            className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors" 
+          <button
+            className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu size={20} />
           </button>
 
           <div className="flex items-center gap-4 ml-auto">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
               target="_blank"
             >
@@ -130,10 +141,7 @@ const AdminLayout = ({ children }) => {
 
       {/* Sidebar Overlay */}
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden" 
-          onClick={() => setSidebarOpen(false)} 
-        />
+        <div className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
     </div>
   )

@@ -41,7 +41,7 @@ const Header = () => {
             <div className="w-8 h-8 bg-lime-500 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-sm">G</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900">Graba2z</h1>
+            <h1 className="text-xl font-bold text-gray-900">GrabaZz</h1>
           </Link>
 
           {/* Search Bar - Center */}
@@ -96,24 +96,6 @@ const Header = () => {
                   {category.name}
                 </Link>
               ))}
-              <Link to="/accessories" className="text-white hover:text-lime-100 whitespace-nowrap font-medium">
-                Accessories & Components
-              </Link>
-              <Link to="/desktop" className="text-white hover:text-lime-100 whitespace-nowrap font-medium">
-                Desktop
-              </Link>
-              <Link to="/laptops" className="text-white hover:text-lime-100 whitespace-nowrap font-medium">
-                Laptops
-              </Link>
-              <Link to="/mobiles" className="text-white hover:text-lime-100 whitespace-nowrap font-medium">
-                Mobiles
-              </Link>
-              <Link to="/monitors" className="text-white hover:text-lime-100 whitespace-nowrap font-medium">
-                Monitors
-              </Link>
-              <Link to="/networking" className="text-white hover:text-lime-100 whitespace-nowrap font-medium">
-                Networking
-              </Link>
             </nav>
           </div>
         </div>
@@ -127,7 +109,7 @@ const Header = () => {
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Home
+                All in one
               </Link>
               <div className="px-4 py-2">
                 <h3 className="font-medium text-gray-900 mb-2">Categories</h3>

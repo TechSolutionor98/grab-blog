@@ -32,6 +32,8 @@ router.get("/", async (req, res) => {
 
     const blogs = await Blog.find(query)
       .populate("category", "name slug color")
+      .populate("topic", "name slug color")
+      .populate("brand", "name slug color")
       .populate("author", "username avatar")
       .sort(sort)
       .skip(skip)
@@ -80,6 +82,8 @@ router.get("/admin", adminAuth, async (req, res) => {
 
     const blogs = await Blog.find(query)
       .populate("category", "name slug color")
+      .populate("topic", "name slug color")
+      .populate("brand", "name slug color")
       .populate("author", "username")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -112,6 +116,8 @@ router.get("/:slug", async (req, res) => {
       status: "published",
     })
       .populate("category", "name slug color")
+      .populate("topic", "name slug color")
+      .populate("brand", "name slug color")
       .populate("author", "username avatar")
 
     if (!blog) {
@@ -147,7 +153,7 @@ router.post(
         return res.status(400).json({ errors: errors.array() })
       }
 
-      const { title, content, excerpt, category, tags, status, featuredImage, seo } = req.body
+      const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo } = req.body
 
       // Verify category exists
       const categoryExists = await Category.findById(category)
@@ -155,11 +161,32 @@ router.post(
         return res.status(400).json({ message: "Invalid category" })
       }
 
+      // Verify topic exists (if provided)
+      if (topic) {
+        const Topic = require("../models/Topic")
+        const topicExists = await Topic.findById(topic)
+        if (!topicExists) {
+          return res.status(400).json({ message: "Invalid topic" })
+        }
+      }
+
+      // Verify brand exists (if provided)
+      if (brand) {
+        const Brand = require("../models/Brand")
+        const brandExists = await Brand.findById(brand)
+        if (!brandExists) {
+          return res.status(400).json({ message: "Invalid brand" })
+        }
+      }
+
       const blog = new Blog({
         title,
+        slug,
         content,
         excerpt,
         category,
+        topic: topic || undefined,
+        brand: brand || undefined,
         author: req.user._id,
         tags: tags || [],
         status: status || "draft",
@@ -171,6 +198,8 @@ router.post(
 
       const populatedBlog = await Blog.findById(blog._id)
         .populate("category", "name slug color")
+        .populate("topic", "name slug color")
+        .populate("brand", "name slug color")
         .populate("author", "username")
 
       res.status(201).json(populatedBlog)
@@ -204,7 +233,7 @@ router.put(
         return res.status(404).json({ message: "Blog not found" })
       }
 
-      const { title, content, excerpt, category, tags, status, featuredImage, seo } = req.body
+      const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo } = req.body
 
       // Verify category exists
       const categoryExists = await Category.findById(category)
@@ -212,11 +241,32 @@ router.put(
         return res.status(400).json({ message: "Invalid category" })
       }
 
+      // Verify topic exists (if provided)
+      if (topic) {
+        const Topic = require("../models/Topic")
+        const topicExists = await Topic.findById(topic)
+        if (!topicExists) {
+          return res.status(400).json({ message: "Invalid topic" })
+        }
+      }
+
+      // Verify brand exists (if provided)
+      if (brand) {
+        const Brand = require("../models/Brand")
+        const brandExists = await Brand.findById(brand)
+        if (!brandExists) {
+          return res.status(400).json({ message: "Invalid brand" })
+        }
+      }
+
       // Update blog fields
       blog.title = title
+      blog.slug = slug || blog.slug
       blog.content = content
       blog.excerpt = excerpt
       blog.category = category
+      blog.topic = topic || blog.topic
+      blog.brand = brand || blog.brand
       blog.tags = tags || []
       blog.status = status || blog.status
       blog.featuredImage = featuredImage || blog.featuredImage
@@ -226,6 +276,8 @@ router.put(
 
       const populatedBlog = await Blog.findById(blog._id)
         .populate("category", "name slug color")
+        .populate("topic", "name slug color")
+        .populate("brand", "name slug color")
         .populate("author", "username")
 
       res.json(populatedBlog)

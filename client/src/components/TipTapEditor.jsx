@@ -46,7 +46,7 @@ const TipTapEditor = ({ content, onChange, placeholder = "Start writing your blo
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",
+        class: "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[300px]",
       },
     },
   })
@@ -255,7 +255,12 @@ const TipTapEditor = ({ content, onChange, placeholder = "Start writing your blo
         </div>
       </div>
 
-      <div className="p-4 min-h-96">
+      <div className="p-4 min-h-96 relative">
+        {editor.isEmpty && (
+          <div className="absolute top-4 left-4 text-gray-400 pointer-events-none">
+            {placeholder}
+          </div>
+        )}
         <EditorContent
           editor={editor}
           className="prose prose-lg max-w-none focus:outline-none"

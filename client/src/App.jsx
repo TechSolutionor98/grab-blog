@@ -8,6 +8,8 @@ import AdminLogin from "./pages/admin/AdminLogin"
 import AdminDashboard from "./pages/admin/AdminDashboard"
 import AdminBlogs from "./pages/admin/AdminBlogs"
 import AdminCategories from "./pages/admin/AdminCategories"
+import AdminTopics from "./pages/admin/AdminTopics"
+import AdminBrands from "./pages/admin/AdminBrands"
 import CreateBlog from "./pages/admin/CreateBlog"
 import EditBlog from "./pages/admin/EditBlog"
 import AdminLayout from "./components/admin/AdminLayout"
@@ -87,6 +89,22 @@ function App() {
               element={
                 <AdminLayout>
                   <AdminCategories />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="/admin/topics"
+              element={
+                <AdminLayout>
+                  <AdminTopics />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="/admin/brands"
+              element={
+                <AdminLayout>
+                  <AdminBrands />
                 </AdminLayout>
               }
             />

@@ -16,6 +16,8 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 // Routes
 app.use("/api/auth", require("./routes/auth"))
 app.use("/api/categories", require("./routes/categories"))
+app.use("/api/topics", require("./routes/topics"))
+app.use("/api/brands", require("./routes/brands"))
 app.use("/api/blogs", require("./routes/blogs"))
 app.use("/api/upload", require("./routes/upload"))
 

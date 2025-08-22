@@ -30,6 +30,14 @@ const blogSchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     },
+    topic: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Topic",
+    },
+    brand: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Brand",
+    },
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -68,9 +76,9 @@ const blogSchema = new mongoose.Schema(
   },
 )
 
-// Generate slug from title before saving
+// Generate slug from title before saving (only if slug is not provided)
 blogSchema.pre("save", function (next) {
-  if (this.isModified("title")) {
+  if (this.isModified("title") && !this.slug) {
     this.slug = this.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
