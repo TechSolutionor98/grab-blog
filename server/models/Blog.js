@@ -67,6 +67,11 @@ const blogSchema = new mongoose.Schema(
       default: false,
       index: true,
     },
+    trendingThisWeek: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     publishedAt: {
       type: Date,
     },

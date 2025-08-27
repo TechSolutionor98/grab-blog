@@ -18,6 +18,7 @@ router.get("/", async (req, res) => {
     const search = req.query.search
   const sort = req.query.sort || "-publishedAt"
   const featuredParam = req.query.featured
+  const trendingParam = req.query.trendingThisWeek
 
     // Build query
   const query = { status: "published" }
@@ -37,6 +38,11 @@ router.get("/", async (req, res) => {
       // Accept 'true'/'false' or '1'/'0'
       const isFeatured = featuredParam === "true" || featuredParam === "1"
       query.featured = isFeatured
+    }
+
+    if (typeof trendingParam !== "undefined") {
+      const isTrending = trendingParam === "true" || trendingParam === "1"
+      query.trendingThisWeek = isTrending
     }
 
     const skip = (page - 1) * limit
@@ -117,35 +123,6 @@ router.get("/admin", adminAuth, async (req, res) => {
   }
 })
 
-// @route   GET /api/blogs/:slug
-// @desc    Get single blog by slug
-// @access  Public
-router.get("/:slug", async (req, res) => {
-  try {
-    const blog = await Blog.findOne({
-      slug: req.params.slug,
-      status: "published",
-    })
-      .populate("category", "name slug color")
-      .populate("topic", "name slug color")
-      .populate("brand", "name slug color")
-      .populate("author", "username avatar")
-
-    if (!blog) {
-      return res.status(404).json({ message: "Blog not found" })
-    }
-
-    // Increment views
-    blog.views += 1
-    await blog.save()
-
-    res.json(blog)
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ message: "Server error" })
-  }
-})
-
 // @route   POST /api/blogs
 // @desc    Create new blog
 // @access  Private (Admin)
@@ -164,7 +141,7 @@ router.post(
         return res.status(400).json({ errors: errors.array() })
       }
 
-  const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo, featured } = req.body
+  const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo, featured, trendingThisWeek } = req.body
 
       // Verify category exists
       if (!mongoose.Types.ObjectId.isValid(category)) {
@@ -220,7 +197,8 @@ router.post(
         status: status || "draft",
         featuredImage,
         seo,
-        featured: !!featured,
+  featured: !!featured,
+  trendingThisWeek: !!trendingThisWeek,
       })
 
       await blog.save()
@@ -265,7 +243,7 @@ router.put(
         return res.status(404).json({ message: "Blog not found" })
       }
 
-  const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo, featured } = req.body
+  const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo, featured, trendingThisWeek } = req.body
 
       // Verify category exists
       if (!mongoose.Types.ObjectId.isValid(category)) {
@@ -321,6 +299,7 @@ router.put(
       blog.featuredImage = featuredImage || blog.featuredImage
       blog.seo = seo || blog.seo
   blog.featured = typeof featured === "boolean" ? featured : blog.featured
+  blog.trendingThisWeek = typeof trendingThisWeek === "boolean" ? trendingThisWeek : blog.trendingThisWeek
 
   await blog.save()
 
@@ -395,14 +374,44 @@ router.get("/trending", async (req, res) => {
   try {
     const limit = Number.parseInt(req.query.limit) || 6
 
-    const trendingBlogs = await Blog.find({ status: "published" })
+    const trendingBlogs = await Blog.find({ status: "published", trendingThisWeek: true })
       .populate("category", "name slug color")
       .populate("author", "username avatar")
-      .sort({ views: -1, publishedAt: -1 })
+      .sort({ publishedAt: -1, createdAt: -1 })
       .limit(limit)
       .select("-content")
 
     res.json(trendingBlogs)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Server error" })
+  }
+})
+
+// Keep slug route after specific routes like /trending to avoid conflicts
+// @route   GET /api/blogs/:slug
+// @desc    Get single blog by slug
+// @access  Public
+router.get("/:slug", async (req, res) => {
+  try {
+    const blog = await Blog.findOne({
+      slug: req.params.slug,
+      status: "published",
+    })
+      .populate("category", "name slug color")
+      .populate("topic", "name slug color")
+      .populate("brand", "name slug color")
+      .populate("author", "username avatar")
+
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" })
+    }
+
+    // Increment views
+    blog.views += 1
+    await blog.save()
+
+    res.json(blog)
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: "Server error" })

@@ -25,7 +25,8 @@ const EditBlog = () => {
       metaDescription: "",
       keywords: [],
     },
-  featured: false,
+    featured: false,
+    trendingThisWeek: false,
   })
   const [formErrors, setFormErrors] = useState({})
   const [tagInput, setTagInput] = useState("")
@@ -35,18 +36,30 @@ const EditBlog = () => {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem("adminToken")
-      const response = await fetch("/api/categories/admin", {
+      // Try admin endpoint first; fall back to public list if unauthorized
+      let response = await fetch("/api/categories/admin", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
 
+      if (!response.ok) {
+        response = await fetch("/api/categories")
+      }
+
       if (response.ok) {
         const data = await response.json()
-        setCategories(data)
+        setCategories(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Error fetching categories:", error)
+      try {
+        const res = await fetch("/api/categories")
+        if (res.ok) {
+          const data = await res.json()
+          setCategories(Array.isArray(data) ? data : [])
+        }
+      } catch {}
     }
   }
 
@@ -73,6 +86,7 @@ const EditBlog = () => {
             status: blog.status || "draft",
             featuredImage: blog.featuredImage || null,
             featured: !!blog.featured,
+            trendingThisWeek: !!blog.trendingThisWeek,
             seo: {
               metaTitle: blog.seo?.metaTitle || "",
               metaDescription: blog.seo?.metaDescription || "",
@@ -109,7 +123,7 @@ const EditBlog = () => {
         },
       }))
     } else {
-  const val = name === "featured" ? e.target.checked : value
+    const val = (name === "featured" || name === "trendingThisWeek") ? e.target.checked : value
   setFormData((prev) => ({ ...prev, [name]: val }))
     }
 
@@ -247,6 +261,7 @@ const EditBlog = () => {
         body: JSON.stringify({
           ...formData,
           status,
+            trendingThisWeek: formData.trendingThisWeek,
           featured: formData.featured,
         }),
       })
@@ -386,8 +401,8 @@ const EditBlog = () => {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Featured toggle */}
-              <div className="bg-gray-50 rounded-lg p-4">
+              {/* Flags */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                 <label className="flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -398,7 +413,17 @@ const EditBlog = () => {
                   />
                   <span className="text-sm font-medium text-gray-700">Mark as Featured</span>
                 </label>
-                <p className="text-xs text-gray-500 mt-2">Featured blogs appear in the homepage hero.</p>
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    name="trendingThisWeek"
+                    checked={formData.trendingThisWeek}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Trending This Week</span>
+                </label>
+                <p className="text-xs text-gray-500">These flags control homepage sections.</p>
               </div>
               {/* Featured Image */}
               <div className="bg-gray-50 rounded-lg p-4">

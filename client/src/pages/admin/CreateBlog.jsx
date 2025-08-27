@@ -28,6 +28,7 @@ const CreateBlog = () => {
       keywords: [],
     },
   featured: false,
+  trendingThisWeek: false,
   })
   const [formErrors, setFormErrors] = useState({})
   const [tagInput, setTagInput] = useState("")
@@ -43,54 +44,91 @@ const CreateBlog = () => {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem("adminToken")
-      const response = await fetch("/api/categories/admin", {
+      // Try admin endpoint first (may include extra fields); fall back to public list
+      let response = await fetch("/api/categories/admin", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
 
+      if (!response.ok) {
+        response = await fetch("/api/categories")
+      }
+
       if (response.ok) {
         const data = await response.json()
-        setCategories(data)
+        setCategories(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Error fetching categories:", error)
+      // Final fallback (in case of network error)
+      try {
+        const res = await fetch("/api/categories")
+        if (res.ok) {
+          const data = await res.json()
+          setCategories(Array.isArray(data) ? data : [])
+        }
+      } catch {}
     }
   }
 
   const fetchTopics = async () => {
     try {
       const token = localStorage.getItem("adminToken")
-      const response = await fetch("/api/topics/admin", {
+      // Try admin endpoint; fall back to public
+      let response = await fetch("/api/topics/admin", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
 
+      if (!response.ok) {
+        response = await fetch("/api/topics")
+      }
+
       if (response.ok) {
         const data = await response.json()
-        setTopics(data)
+        setTopics(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Error fetching topics:", error)
+      try {
+        const res = await fetch("/api/topics")
+        if (res.ok) {
+          const data = await res.json()
+          setTopics(Array.isArray(data) ? data : [])
+        }
+      } catch {}
     }
   }
 
   const fetchBrands = async () => {
     try {
       const token = localStorage.getItem("adminToken")
-      const response = await fetch("/api/brands/admin", {
+      // Try admin endpoint; fall back to public
+      let response = await fetch("/api/brands/admin", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
 
+      if (!response.ok) {
+        response = await fetch("/api/brands")
+      }
+
       if (response.ok) {
         const data = await response.json()
-        setBrands(data)
+        setBrands(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Error fetching brands:", error)
+      try {
+        const res = await fetch("/api/brands")
+        if (res.ok) {
+          const data = await res.json()
+          setBrands(Array.isArray(data) ? data : [])
+        }
+      } catch {}
     }
   }
 
@@ -130,7 +168,7 @@ const CreateBlog = () => {
         const formattedSlug = generateSlug(value)
         setFormData((prev) => ({ ...prev, [name]: formattedSlug }))
       } else {
-  const val = name === "featured" ? e.target.checked : value
+  const val = (name === "featured" || name === "trendingThisWeek") ? e.target.checked : value
   setFormData((prev) => ({ ...prev, [name]: val }))
       }
     }
@@ -217,7 +255,14 @@ const CreateBlog = () => {
           },
         }))
       } else {
-        alert("Failed to upload image")
+        const err = await response.json().catch(() => ({}))
+        if (response.status === 401) {
+          alert("You are not authorized. Please log in again.")
+        } else if (response.status === 413) {
+          alert(err.message || "File too large. Max 10MB")
+        } else {
+          alert(err.message || "Failed to upload image")
+        }
       }
     } catch (error) {
       console.error("Error uploading image:", error)
@@ -276,6 +321,7 @@ const CreateBlog = () => {
       const payload = {
         ...formData,
         featured: !!formData.featured,
+        trendingThisWeek: !!formData.trendingThisWeek,
         status,
       }
       
@@ -517,6 +563,31 @@ const CreateBlog = () => {
                   ))}
                 </select>
                 {formErrors.category && <span className="text-sm text-red-600 mt-1 block">{formErrors.category}</span>}
+              </div>
+
+              {/* Flags */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    name="featured"
+                    checked={formData.featured}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Mark as Featured</span>
+                </label>
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    name="trendingThisWeek"
+                    checked={formData.trendingThisWeek}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Trending This Week</span>
+                </label>
+                <p className="text-xs text-gray-500">These flags control homepage sections.</p>
               </div>
 
               {/* Topic */}

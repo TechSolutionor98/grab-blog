@@ -15,18 +15,32 @@ const Home = () => {
   const [currentIndex, setCurrentIndex] = useState(ITEMS_PER_VIEW)
   const [enableTransition, setEnableTransition] = useState(true)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState("")
   const [pagination, setPagination] = useState({})
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [searchParams, setSearchParams] = useSearchParams()
+  // Latest (homepage) incremental state
+  const [latestPage, setLatestPage] = useState(1)
+  const [latestHasMore, setLatestHasMore] = useState(false)
 
   const currentPage = Number.parseInt(searchParams.get("page")) || 1
   const searchQuery = searchParams.get("search") || ""
 
   useEffect(() => {
-    fetchBlogs()
+    // Featured + Trending always refresh when deps change
     fetchFeaturedBlogs()
     fetchTrendingBlogs()
+
+    if (searchQuery || selectedCategory) {
+      // Use paginated search/category view
+      fetchBlogs()
+    } else {
+      // Reset and load first page for homepage Latest section
+      setBlogs([])
+      setLatestPage(1)
+      fetchLatestBlogs(1, true)
+    }
   }, [currentPage, selectedCategory, searchQuery])
 
   const fetchBlogs = async () => {
@@ -61,6 +75,40 @@ const Home = () => {
       setError("Failed to fetch blogs")
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Latest (homepage) loader with incremental append
+  const fetchLatestBlogs = async (page = 1, replace = false) => {
+    // page 1 uses main loading state; subsequent pages use loadingMore
+    if (page === 1) setLoading(true)
+    if (page > 1) setLoadingMore(true)
+    setError("")
+
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "9",
+        sort: "-publishedAt",
+      })
+
+      const response = await fetch(`/api/blogs?${params}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        setBlogs((prev) => (replace ? data.blogs : [...prev, ...data.blogs]))
+        const pag = data.pagination || {}
+        setLatestPage(pag.current || page)
+        setLatestHasMore(!!pag.hasNext)
+      } else {
+        setError(data.message || "Failed to fetch blogs")
+      }
+    } catch (err) {
+      console.error("Error fetching latest blogs:", err)
+      setError("Failed to fetch blogs")
+    } finally {
+      if (page === 1) setLoading(false)
+      if (page > 1) setLoadingMore(false)
     }
   }
 
@@ -100,10 +148,13 @@ const Home = () => {
 
   const fetchTrendingBlogs = async () => {
     try {
-      const response = await fetch("/api/blogs?limit=4&sort=createdAt")
+  // Fetch only blogs marked as Trending This Week
+  // Prefer the dedicated endpoint; fallback kept simple if needed
+  const response = await fetch("/api/blogs/trending?limit=4")
       const data = await response.json()
       if (response.ok) {
-        setTrendingBlogs(data.blogs)
+  const list = Array.isArray(data) ? data : data.blogs
+  setTrendingBlogs(Array.isArray(list) ? list : [])
       }
     } catch (error) {
       console.error("Error fetching trending blogs:", error)
@@ -346,7 +397,7 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {trendingBlogs.map((blog) => (
+            {(Array.isArray(trendingBlogs) ? trendingBlogs : []).map((blog) => (
               <div
                 key={blog._id}
                 className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
@@ -425,32 +476,16 @@ const Home = () => {
                 </div>
               )}
 
-              {/* Pagination */}
-              {pagination.pages > 1 && (
+              {/* Load More */}
+              {latestHasMore && (
                 <div className="flex items-center justify-center">
-                  <div className="flex items-center space-x-4 bg-white rounded-lg shadow-sm p-4">
-                    <button
-                      className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-lime-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={!pagination.hasPrev}
-                    >
-                      <ChevronLeft size={20} />
-                      <span>Previous</span>
-                    </button>
-
-                    <div className="text-gray-600 font-medium">
-                      Page {pagination.current} of {pagination.pages}
-                    </div>
-
-                    <button
-                      className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-lime-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={!pagination.hasNext}
-                    >
-                      <span>Next</span>
-                      <ChevronRight size={20} />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => fetchLatestBlogs(latestPage + 1, false)}
+                    disabled={loadingMore}
+                    className="px-6 py-3 rounded-lg bg-lime-500 text-white hover:bg-lime-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {loadingMore ? "Loading..." : "Load More"}
+                  </button>
                 </div>
               )}
             </>

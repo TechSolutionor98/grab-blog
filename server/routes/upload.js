@@ -7,10 +7,11 @@ const router = express.Router()
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage()
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+  fileSize: MAX_FILE_SIZE,
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
@@ -24,10 +25,30 @@ const upload = multer({
 // @route   POST /api/upload/image
 // @desc    Upload image to Cloudinary
 // @access  Private (Admin)
-router.post("/image", adminAuth, upload.single("image"), async (req, res) => {
-  try {
+router.post(
+  "/image",
+  adminAuth,
+  (req, res, next) => {
+    // Wrap multer to catch errors
+    upload.single("image")(req, res, (err) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(413).json({ message: `File too large. Max ${Math.floor(MAX_FILE_SIZE / (1024 * 1024))}MB` })
+        }
+        return res.status(400).json({ message: err.message || "Invalid file upload" })
+      }
+      next()
+    })
+  },
+  async (req, res) => {
+    try {
     if (!req.file) {
       return res.status(400).json({ message: "No image file provided" })
+    }
+
+    // Ensure Cloudinary is configured
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      return res.status(500).json({ message: "Image service not configured. Missing Cloudinary credentials." })
     }
 
     // Upload to Cloudinary
@@ -55,7 +76,9 @@ router.post("/image", adminAuth, upload.single("image"), async (req, res) => {
     })
   } catch (error) {
     console.error("Upload error:", error)
-    res.status(500).json({ message: "Image upload failed" })
+    // Pass through known Cloudinary error messages if available
+    const message = (error && (error.message || error.error || error.name)) || "Image upload failed"
+    res.status(500).json({ message })
   }
 })
 
