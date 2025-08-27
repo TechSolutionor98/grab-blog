@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Search, Menu, X, ShoppingBag, MoreHorizontal } from "lucide-react"
+import { Search, Menu, X, ShoppingBag } from "lucide-react"
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState("")
@@ -10,6 +10,7 @@ const Header = () => {
   const [categories, setCategories] = useState([])
   const [visibleCount, setVisibleCount] = useState(null) // number of categories (excluding "All in one") visible in the centered row
   const [isMoreOpen, setIsMoreOpen] = useState(false)
+  const [showLogo, setShowLogo] = useState(true)
 
   const navListRef = useRef(null)
   const allInOneRef = useRef(null)
@@ -66,12 +67,11 @@ const Header = () => {
       return
     }
 
-    // Need More button; keep categories centered, reserve gap + moreWidth at end
-    let width = allInOneWidth
+    // Need More button; place More on the left, then All in one, then categories
+    let width = moreWidth + gap + allInOneWidth
     let count = 0
-    const requiredRemaining = gap + moreWidth // gap before More + More width
     for (let i = 0; i < catWidths.length; i++) {
-      const nextWidth = width + gap + catWidths[i] + requiredRemaining
+      const nextWidth = width + gap + catWidths[i]
       if (nextWidth <= containerWidth) {
         width += gap + catWidths[i]
         count++
@@ -81,7 +81,6 @@ const Header = () => {
     }
     setVisibleCount(count)
   }
-
   // Recalculate on load, resize, and when categories or query changes
   useLayoutEffect(() => {
     const observer = new ResizeObserver(() => {
@@ -128,30 +127,38 @@ const Header = () => {
   }, [isMoreOpen])
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="bg-white -mt-3 shadow-sm border-b border-gray-200 pt-3">
+      <div className="max-w-7xl mx-auto ">
+        <div className="flex items-center justify-between my-3">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-lime-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">G</span>
-            </div>
-            <h1 className="text-xl font-bold text-gray-900">GrabaZz</h1>
+           
+            {showLogo ? (
+              <img
+                src="/admin-logo.svg"
+                alt="GrabaZz logo"
+                className="h-14 w-auto object-contain"
+                onError={() => setShowLogo(false)}
+              />
+            ) : (
+              <h1 className="text-xl font-bold text-gray-900">GrabaZz</h1>
+            )}
           </Link>
 
           {/* Search Bar - Center */}
           <form onSubmit={handleSearch} className="flex-1 max-w-lg mx-8">
-            <div className="relative">
+            <div className="flex items-center gap-2">
               <input
                 type="text"
                 placeholder="Search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 pl-4 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+                className="w-full h-12 px-4 border border-gray-300  focus:outline-none focus:ring-1 focus:ring-lime-500 focus:border-lime-500"
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-lime-500 text-white p-2 rounded-md hover:bg-lime-600 transition-colors"
+                aria-label="Search"
+                className="h-12 w-14 bg-lime-500 text-white  flex items-center justify-center hover:bg-lime-600 transition-colors"
               >
                 <Search size={16} />
               </button>
@@ -176,14 +183,44 @@ const Header = () => {
           </button>
         </div>
 
-        <div className="bg-lime-500 -mx-4 sm:-mx-6 lg:-mx-8">
+        <div className="bg-lime-500 py-2 -mx-4 sm:-mx-6 lg:-mx-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Desktop categories: centered; show More only when needed */}
-            <nav className="hidden md:flex py-3">
+            <nav className="hidden md:flex py-1">
               <ul
                 ref={navListRef}
-                className="flex w-full items-center justify-center gap-8 whitespace-nowrap overflow-visible relative"
+                className="flex w-full items-center justify-center gap-12 whitespace-nowrap overflow-visible relative"
               >
+                {/* More dropdown (only render when overflow) - now on the left */}
+                {overflowExists && (
+                  <li className="relative">
+                    <button
+                      ref={moreBtnRef}
+                      type="button"
+                      onClick={() => setIsMoreOpen((v) => !v)}
+                      className="inline-flex items-center font-medium text-white hover:text-lime-100 transition-colors px-0 py-0"
+                      aria-haspopup="menu"
+                      aria-expanded={isMoreOpen}
+                    >
+                      <span>More</span>
+                    </button>
+                    {isMoreOpen && (
+                      <div className="absolute left-0 top-full mt-2 min-w-44 rounded-md bg-white py-2 shadow-lg ring-1 ring-black/10 z-20">
+                        {categories.slice(visibleCount ?? 0).map((category) => (
+                          <Link
+                            key={category._id}
+                            to={`/category/${category._id}`}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => setIsMoreOpen(false)}
+                          >
+                            {category.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </li>
+                )}
+
                 {/* All in one always visible */}
                 <li ref={allInOneRef}>
                   <Link to="/" className="text-white hover:text-lime-100 font-medium">
@@ -216,36 +253,7 @@ const Header = () => {
                   ))}
                 </li>
 
-                {/* More dropdown (only render when overflow) */}
-                {overflowExists && (
-                  <li className="relative">
-                    <button
-                      ref={moreBtnRef}
-                      type="button"
-                      onClick={() => setIsMoreOpen((v) => !v)}
-                      className="flex items-center gap-2 rounded-md px-3 py-1.5 font-medium text-white hover:text-lime-100 transition-colors"
-                      aria-haspopup="menu"
-                      aria-expanded={isMoreOpen}
-                    >
-                      <MoreHorizontal size={18} />
-                      <span>More</span>
-                    </button>
-                    {isMoreOpen && (
-                      <div className="absolute right-0 top-full mt-2 min-w-44 rounded-md bg-white py-2 shadow-lg ring-1 ring-black/10 z-20">
-                        {categories.slice(visibleCount ?? 0).map((category) => (
-                          <Link
-                            key={category._id}
-                            to={`/category/${category._id}`}
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                            onClick={() => setIsMoreOpen(false)}
-                          >
-                            {category.name}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </li>
-                )}
+                
               </ul>
             </nav>
           </div>

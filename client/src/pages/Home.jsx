@@ -10,6 +10,10 @@ const Home = () => {
   const [blogs, setBlogs] = useState([])
   const [featuredBlogs, setFeaturedBlogs] = useState([])
   const [trendingBlogs, setTrendingBlogs] = useState([])
+  // Hero slider: show 3 cards, move by 1 card every 3s
+  const ITEMS_PER_VIEW = 3
+  const [currentIndex, setCurrentIndex] = useState(ITEMS_PER_VIEW)
+  const [enableTransition, setEnableTransition] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [pagination, setPagination] = useState({})
@@ -62,15 +66,37 @@ const Home = () => {
 
   const fetchFeaturedBlogs = async () => {
     try {
-      const response = await fetch("/api/blogs?limit=3&sort=views")
+      const response = await fetch("/api/blogs?limit=9&sort=views")
       const data = await response.json()
       if (response.ok) {
         setFeaturedBlogs(data.blogs)
+        // Reset hero slider position when data changes
+        setCurrentIndex(ITEMS_PER_VIEW)
+        setEnableTransition(true)
       }
     } catch (error) {
       console.error("Error fetching featured blogs:", error)
     }
   }
+
+  // Auto-advance hero every 3 seconds (slides by 1 card)
+  const useLoop = featuredBlogs && featuredBlogs.length > ITEMS_PER_VIEW
+  useEffect(() => {
+    if (!useLoop) return
+    const id = setInterval(() => {
+      setCurrentIndex((idx) => idx + 1)
+    }, 3000)
+    return () => clearInterval(id)
+  }, [useLoop])
+
+  // Build slides with clones at both ends for seamless loop
+  const slides = (() => {
+    if (!featuredBlogs || featuredBlogs.length === 0) return []
+    if (!useLoop) return featuredBlogs
+    const startClones = featuredBlogs.slice(-ITEMS_PER_VIEW)
+    const endClones = featuredBlogs.slice(0, ITEMS_PER_VIEW)
+    return [...startClones, ...featuredBlogs, ...endClones]
+  })()
 
   const fetchTrendingBlogs = async () => {
     try {
@@ -219,33 +245,97 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section - Featured Blogs */}
+      {/* Hero Section - Featured Blogs (3 up, step-by-step slider) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {featuredBlogs.map((blog, index) => (
-            <div key={blog._id} className="relative group cursor-pointer overflow-hidden rounded-lg">
-              <div className="aspect-[4/3] relative">
-                <img
-                  src={blog.featuredImage?.url || "/placeholder.svg?height=300&width=400"}
-                  alt={blog.title}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-6">
-                  <div className="text-white">
-                    <div
-                      className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-3"
-                      style={{ backgroundColor: blog.category?.color || "#2563eb" }}
-                    >
-                      {blog.category?.name}
+        {featuredBlogs && featuredBlogs.length > 0 && (
+          <div className="relative">
+            {/* Track container with clipping */}
+            <div className="overflow-hidden">
+              <div
+                className="flex -mx-3"
+                style={{
+                  width: "100%",
+                  transform: useLoop ? `translateX(-${currentIndex * (100 / ITEMS_PER_VIEW)}%)` : "translateX(0)",
+                  transition: useLoop && enableTransition ? "transform 500ms ease-in-out" : "none",
+                }}
+                onTransitionEnd={() => {
+                  if (!useLoop) return
+                  // When we hit the cloned end, jump back to real first slide without animation
+                  if (currentIndex >= featuredBlogs.length + ITEMS_PER_VIEW) {
+                    setEnableTransition(false)
+                    setCurrentIndex(ITEMS_PER_VIEW)
+                    // Re-enable transition on next frame
+                    requestAnimationFrame(() => setEnableTransition(true))
+                  }
+                  // When we hit the cloned start, jump to last real slide without animation
+                  if (currentIndex <= ITEMS_PER_VIEW - 1) {
+                    setEnableTransition(false)
+                    setCurrentIndex(featuredBlogs.length + ITEMS_PER_VIEW - 1)
+                    requestAnimationFrame(() => setEnableTransition(true))
+                  }
+                }}
+              >
+              {slides.map((blog, i) => (
+                <div key={`${blog._id}-${i}`} className="pl-6" style={{ minWidth: `${100 / ITEMS_PER_VIEW}%` }}>
+                  {/* Preserve original card layout */}
+                  <div className="relative group cursor-pointer overflow-hidden rounded-lg">
+                    <div className="aspect-[4/3] relative">
+                      <img
+                        src={blog.featuredImage?.url || "/placeholder.svg?height=300&width=400"}
+                        alt={blog.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-6">
+                        <div className="text-white">
+                          <div
+                            className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-3"
+                            style={{ backgroundColor: blog.category?.color || "#2563eb" }}
+                          >
+                            {blog.category?.name}
+                          </div>
+                          <h3 className="text-xl font-bold mb-2 line-clamp-2">{blog.title}</h3>
+                          {/* <p className="text-sm opacity-90 line-clamp-2">{blog.excerpt}</p> */}
+                        </div>
+                      </div>
                     </div>
-                    <h3 className="text-xl font-bold mb-2 line-clamp-2">{blog.title}</h3>
-                    <p className="text-sm opacity-90 line-clamp-2">{blog.excerpt}</p>
                   </div>
                 </div>
+              ))}
+              {/* Placeholders to keep 3-up layout if fewer items and no loop */}
+              {!useLoop && featuredBlogs.length > 0 && featuredBlogs.length < ITEMS_PER_VIEW &&
+                Array.from({ length: ITEMS_PER_VIEW - featuredBlogs.length }).map((_, i) => (
+                  <div key={`ph-${i}`} className="px-3" style={{ minWidth: `${100 / ITEMS_PER_VIEW}%` }}>
+                    <div className="relative rounded-lg">
+                      <div className="aspect-[4/3] bg-gray-100" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
+
+            {/* Slider Arrows outside cards */}
+            {useLoop && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Previous"
+                  onClick={() => setCurrentIndex((idx) => idx - 1)}
+                  className="absolute -left-6 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
+                >
+                  <ChevronLeft className="mx-auto" size={20} />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next"
+                  onClick={() => setCurrentIndex((idx) => idx + 1)}
+                  className="absolute -right-6 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
+                >
+                  <ChevronRight className="mx-auto" size={20} />
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Trending Section */}
