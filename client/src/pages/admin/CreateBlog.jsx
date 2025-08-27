@@ -27,6 +27,7 @@ const CreateBlog = () => {
       metaDescription: "",
       keywords: [],
     },
+  featured: false,
   })
   const [formErrors, setFormErrors] = useState({})
   const [tagInput, setTagInput] = useState("")
@@ -129,7 +130,8 @@ const CreateBlog = () => {
         const formattedSlug = generateSlug(value)
         setFormData((prev) => ({ ...prev, [name]: formattedSlug }))
       } else {
-        setFormData((prev) => ({ ...prev, [name]: value }))
+  const val = name === "featured" ? e.target.checked : value
+  setFormData((prev) => ({ ...prev, [name]: val }))
       }
     }
 
@@ -273,6 +275,7 @@ const CreateBlog = () => {
       
       const payload = {
         ...formData,
+        featured: !!formData.featured,
         status,
       }
       
@@ -297,7 +300,9 @@ const CreateBlog = () => {
         navigate("/admin/blogs")
       } else {
         console.log("Server error response:", data)
-        if (data.errors) {
+        if (data.message === "Slug already exists") {
+          setFormErrors({ slug: data.message })
+        } else if (data.errors) {
           const errors = {}
           data.errors.forEach((error) => {
             errors[error.path] = error.msg
@@ -434,6 +439,20 @@ const CreateBlog = () => {
 
             {/* Sidebar */}
             <div className="space-y-6">
+              {/* Featured toggle */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    name="featured"
+                    checked={formData.featured}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Mark as Featured</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-2">Featured blogs appear in the homepage hero.</p>
+              </div>
               {/* Featured Image */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Featured Image</h3>

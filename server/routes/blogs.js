@@ -1,4 +1,5 @@
 const express = require("express")
+const mongoose = require("mongoose")
 const { body, validationResult } = require("express-validator")
 const Blog = require("../models/Blog")
 const Category = require("../models/Category")
@@ -15,12 +16,16 @@ router.get("/", async (req, res) => {
     const limit = Number.parseInt(req.query.limit) || 10
     const category = req.query.category
     const search = req.query.search
-    const sort = req.query.sort || "-publishedAt"
+  const sort = req.query.sort || "-publishedAt"
+  const featuredParam = req.query.featured
 
     // Build query
-    const query = { status: "published" }
+  const query = { status: "published" }
 
     if (category) {
+      if (!mongoose.Types.ObjectId.isValid(category)) {
+        return res.status(400).json({ message: "Invalid category" })
+      }
       query.category = category
     }
 
@@ -28,9 +33,15 @@ router.get("/", async (req, res) => {
       query.$text = { $search: search }
     }
 
+    if (typeof featuredParam !== "undefined") {
+      // Accept 'true'/'false' or '1'/'0'
+      const isFeatured = featuredParam === "true" || featuredParam === "1"
+      query.featured = isFeatured
+    }
+
     const skip = (page - 1) * limit
 
-    const blogs = await Blog.find(query)
+  const blogs = await Blog.find(query)
       .populate("category", "name slug color")
       .populate("topic", "name slug color")
       .populate("brand", "name slug color")
@@ -153,9 +164,12 @@ router.post(
         return res.status(400).json({ errors: errors.array() })
       }
 
-      const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo } = req.body
+  const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo, featured } = req.body
 
       // Verify category exists
+      if (!mongoose.Types.ObjectId.isValid(category)) {
+        return res.status(400).json({ message: "Invalid category" })
+      }
       const categoryExists = await Category.findById(category)
       if (!categoryExists) {
         return res.status(400).json({ message: "Invalid category" })
@@ -163,6 +177,9 @@ router.post(
 
       // Verify topic exists (if provided)
       if (topic) {
+        if (!mongoose.Types.ObjectId.isValid(topic)) {
+          return res.status(400).json({ message: "Invalid topic" })
+        }
         const Topic = require("../models/Topic")
         const topicExists = await Topic.findById(topic)
         if (!topicExists) {
@@ -172,10 +189,21 @@ router.post(
 
       // Verify brand exists (if provided)
       if (brand) {
+        if (!mongoose.Types.ObjectId.isValid(brand)) {
+          return res.status(400).json({ message: "Invalid brand" })
+        }
         const Brand = require("../models/Brand")
         const brandExists = await Brand.findById(brand)
         if (!brandExists) {
           return res.status(400).json({ message: "Invalid brand" })
+        }
+      }
+
+      // Pre-check slug uniqueness when provided
+      if (slug) {
+        const exists = await Blog.exists({ slug })
+        if (exists) {
+          return res.status(400).json({ message: "Slug already exists" })
         }
       }
 
@@ -192,6 +220,7 @@ router.post(
         status: status || "draft",
         featuredImage,
         seo,
+        featured: !!featured,
       })
 
       await blog.save()
@@ -205,6 +234,9 @@ router.post(
       res.status(201).json(populatedBlog)
     } catch (error) {
       console.error(error)
+      if (error && error.code === 11000 && error.keyPattern && error.keyPattern.slug) {
+        return res.status(400).json({ message: "Slug already exists" })
+      }
       res.status(500).json({ message: "Server error" })
     }
   },
@@ -233,9 +265,12 @@ router.put(
         return res.status(404).json({ message: "Blog not found" })
       }
 
-      const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo } = req.body
+  const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo, featured } = req.body
 
       // Verify category exists
+      if (!mongoose.Types.ObjectId.isValid(category)) {
+        return res.status(400).json({ message: "Invalid category" })
+      }
       const categoryExists = await Category.findById(category)
       if (!categoryExists) {
         return res.status(400).json({ message: "Invalid category" })
@@ -243,6 +278,9 @@ router.put(
 
       // Verify topic exists (if provided)
       if (topic) {
+        if (!mongoose.Types.ObjectId.isValid(topic)) {
+          return res.status(400).json({ message: "Invalid topic" })
+        }
         const Topic = require("../models/Topic")
         const topicExists = await Topic.findById(topic)
         if (!topicExists) {
@@ -252,10 +290,21 @@ router.put(
 
       // Verify brand exists (if provided)
       if (brand) {
+        if (!mongoose.Types.ObjectId.isValid(brand)) {
+          return res.status(400).json({ message: "Invalid brand" })
+        }
         const Brand = require("../models/Brand")
         const brandExists = await Brand.findById(brand)
         if (!brandExists) {
           return res.status(400).json({ message: "Invalid brand" })
+        }
+      }
+
+      // If slug changing, pre-check uniqueness
+      if (slug && slug !== blog.slug) {
+        const exists = await Blog.exists({ slug, _id: { $ne: blog._id } })
+        if (exists) {
+          return res.status(400).json({ message: "Slug already exists" })
         }
       }
 
@@ -271,8 +320,9 @@ router.put(
       blog.status = status || blog.status
       blog.featuredImage = featuredImage || blog.featuredImage
       blog.seo = seo || blog.seo
+  blog.featured = typeof featured === "boolean" ? featured : blog.featured
 
-      await blog.save()
+  await blog.save()
 
       const populatedBlog = await Blog.findById(blog._id)
         .populate("category", "name slug color")
@@ -283,6 +333,9 @@ router.put(
       res.json(populatedBlog)
     } catch (error) {
       console.error(error)
+      if (error && error.code === 11000 && error.keyPattern && error.keyPattern.slug) {
+        return res.status(400).json({ message: "Slug already exists" })
+      }
       res.status(500).json({ message: "Server error" })
     }
   },

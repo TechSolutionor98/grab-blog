@@ -66,7 +66,7 @@ const Home = () => {
 
   const fetchFeaturedBlogs = async () => {
     try {
-      const response = await fetch("/api/blogs?limit=9&sort=views")
+      const response = await fetch("/api/blogs?limit=9&featured=true&sort=-publishedAt")
       const data = await response.json()
       if (response.ok) {
         setFeaturedBlogs(data.blogs)
