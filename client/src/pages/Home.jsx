@@ -112,6 +112,8 @@ const Home = () => {
     }
   }
 
+
+  
   const fetchFeaturedBlogs = async () => {
     try {
       const response = await fetch("/api/blogs?limit=9&featured=true&sort=-publishedAt")
