@@ -33,13 +33,25 @@ const categorySchema = new mongoose.Schema(
   },
 )
 
-// Generate slug from name before saving
-categorySchema.pre("save", function (next) {
+// Generate slug from name before validation so `slug` passes required validation
+categorySchema.pre("validate", function (next) {
   if (this.isModified("name")) {
     this.slug = this.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "")
+  }
+  next()
+})
+// Also handle slug when using findOneAndUpdate style operations
+categorySchema.pre("findOneAndUpdate", function (next) {
+  const update = this.getUpdate() || {}
+  if (update.name) {
+    const newSlug = String(update.name)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+    this.setUpdate({ ...update, slug: newSlug })
   }
   next()
 })

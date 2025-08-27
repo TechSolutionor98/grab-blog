@@ -75,8 +75,16 @@ router.post(
         color: color || "#007bff",
       })
 
-      await category.save()
-      res.status(201).json(category)
+      try {
+        await category.save()
+        res.status(201).json(category)
+      } catch (err) {
+        // Handle duplicate key errors (e.g., slug uniqueness)
+        if (err && err.code === 11000) {
+          return res.status(400).json({ message: "Category with similar name already exists" })
+        }
+        throw err
+      }
     } catch (error) {
       console.error(error)
       res.status(500).json({ message: "Server error" })
@@ -122,8 +130,15 @@ router.put(
       category.color = color || category.color
       category.isActive = isActive !== undefined ? isActive : category.isActive
 
-      await category.save()
-      res.json(category)
+      try {
+        await category.save()
+        res.json(category)
+      } catch (err) {
+        if (err && err.code === 11000) {
+          return res.status(400).json({ message: "Category with similar name already exists" })
+        }
+        throw err
+      }
     } catch (error) {
       console.error(error)
       res.status(500).json({ message: "Server error" })
