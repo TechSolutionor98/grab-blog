@@ -202,12 +202,14 @@ const Home = () => {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar */}
-            <aside className="lg:w-64 flex-shrink-0">
-              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
-                <CategoryFilter selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
-              </div>
-            </aside>
+            {/* Sidebar (hidden on search results page) */}
+            {!searchQuery && (
+              <aside className="lg:w-64 flex-shrink-0">
+                <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
+                  <CategoryFilter selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
+                </div>
+              </aside>
+            )}
 
             {/* Main Content */}
             <main className="flex-1">
