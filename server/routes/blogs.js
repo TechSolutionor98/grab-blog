@@ -9,6 +9,12 @@ const { auth, adminAuth } = require("../middleware/auth")
 
 const router = express.Router()
 
+// utils
+const clamp = (str, max) => {
+  if (typeof str !== "string") return str
+  return str.length > max ? str.slice(0, max) : str
+}
+
 // @route   GET /api/blogs
 // @desc    Get all published blogs with pagination
 // @access  Public
@@ -186,6 +192,9 @@ router.post(
 
   const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo, featured, trendingThisWeek } = req.body
 
+      // Ensure excerpt respects schema maxlength (300)
+      const normalizedExcerpt = clamp(excerpt, 300)
+
       // Verify category exists
       if (!mongoose.Types.ObjectId.isValid(category)) {
         return res.status(400).json({ message: "Invalid category" })
@@ -231,7 +240,7 @@ router.post(
         title,
         slug,
         content,
-        excerpt,
+        excerpt: normalizedExcerpt,
         category,
         topic: topic || undefined,
         brand: brand || undefined,
@@ -255,6 +264,13 @@ router.post(
       res.status(201).json(populatedBlog)
     } catch (error) {
       console.error(error)
+      if (error && error.name === "ValidationError") {
+        const errors = Object.keys(error.errors || {}).map((k) => ({
+          msg: error.errors[k]?.message || "Invalid value",
+          param: k,
+        }))
+        return res.status(400).json({ errors })
+      }
       if (error && error.code === 11000 && error.keyPattern && error.keyPattern.slug) {
         return res.status(400).json({ message: "Slug already exists" })
       }
@@ -287,6 +303,9 @@ router.put(
       }
 
   const { title, slug, content, excerpt, category, topic, brand, tags, status, featuredImage, seo, featured, trendingThisWeek } = req.body
+
+      // Ensure excerpt respects schema maxlength (300)
+      const normalizedExcerpt = clamp(excerpt, 300)
 
       // Verify category exists
       if (!mongoose.Types.ObjectId.isValid(category)) {
@@ -333,7 +352,7 @@ router.put(
       blog.title = title
       blog.slug = slug || blog.slug
       blog.content = content
-      blog.excerpt = excerpt
+  blog.excerpt = normalizedExcerpt
       blog.category = category
       blog.topic = topic || blog.topic
       blog.brand = brand || blog.brand
@@ -355,6 +374,13 @@ router.put(
       res.json(populatedBlog)
     } catch (error) {
       console.error(error)
+      if (error && error.name === "ValidationError") {
+        const errors = Object.keys(error.errors || {}).map((k) => ({
+          msg: error.errors[k]?.message || "Invalid value",
+          param: k,
+        }))
+        return res.status(400).json({ errors })
+      }
       if (error && error.code === 11000 && error.keyPattern && error.keyPattern.slug) {
         return res.status(400).json({ message: "Slug already exists" })
       }

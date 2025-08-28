@@ -216,17 +216,7 @@ const BlogDetail = () => {
             </header>
 
             {/* Share row */}
-            <div className="px-8 pt-6">
-              <div className="flex items-center gap-3 text-sm text-gray-600">
-                <Share2 size={18} className="text-lime-600" />
-                <span>Share:</span>
-                <a className="hover:text-lime-600" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(blog.title)}`} target="_blank" rel="noopener noreferrer">X</a>
-                <span className="text-gray-300">|</span>
-                <a className="hover:text-lime-600" href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer">Facebook</a>
-                <span className="text-gray-300">|</span>
-                <a className="hover:text-lime-600" href={`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(window.location.href)}&title=${encodeURIComponent(blog.title)}`} target="_blank" rel="noopener noreferrer">LinkedIn</a>
-              </div>
-            </div>
+          
 
             {/* Content */}
             <div className="px-8 py-6">
@@ -289,22 +279,14 @@ const BlogDetail = () => {
             )}
 
             {/* Author Info */}
-            <div className="px-8 py-6 border-t border-gray-200 bg-gray-50">
+            <div className="px-8 py-6 border-t border-gray-200 bg-white">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  {blog.author?.avatar ? (
-                    <img
-                      src={blog.author.avatar || "/placeholder.svg"}
-                      alt={blog.author.username}
-                      className="w-16 h-16 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-lime-500 rounded-full flex items-center justify-center">
+               <div className="w-16 h-16 bg-lime-500 rounded-full flex items-center justify-center">
                       <span className="text-white font-bold text-xl">
                         {blog.author?.username?.charAt(0).toUpperCase() || "A"}
                       </span>
                     </div>
-                  )}
                 </div>
                 <div className="ml-4">
                   <h4 className="text-lg font-semibold text-gray-900">
@@ -315,7 +297,19 @@ const BlogDetail = () => {
                   </p>
                 </div>
               </div>
+                <div className="px-8 pt-6">
+              <div className="flex items-center gap-3 text-sm text-gray-600">
+                <Share2 size={18} className="text-lime-600" />
+                <span>Share:</span>
+                <a className="hover:text-lime-600" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(blog.title)}`} target="_blank" rel="noopener noreferrer">X</a>
+                <span className="text-gray-300">|</span>
+                <a className="hover:text-lime-600" href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer">Facebook</a>
+                <span className="text-gray-300">|</span>
+                <a className="hover:text-lime-600" href={`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(window.location.href)}&title=${encodeURIComponent(blog.title)}`} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              </div>
             </div>
+            </div>
+            
           </article>
 
           {/* Sidebar */}
@@ -323,9 +317,7 @@ const BlogDetail = () => {
             {/* Sidebar Ad at top */}
             <div className="bg-white rounded-lg shadow-sm">
               <div className="px-5 pt-4">
-                <div className="inline-block bg-amber-500 text-white text-xs font-semibold px-3 py-1 rounded">
-                  BACK TO SCHOOL SALE
-                </div>
+              
               </div>
               <div className="p-5">
                 <div className="w-full h-40 md:h-56 rounded bg-white border border-dashed border-gray-300 flex items-center justify-center text-gray-500 text-sm">
