@@ -417,7 +417,7 @@ const Home = () => {
                         alt={blog.title}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end justify-center p-6">
+                      <div className="absolute inset-0  flex items-end justify-center p-6">
                         <div className="text-white text-center w-full">
                           {/* <div
                             className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-3"
