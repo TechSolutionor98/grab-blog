@@ -13,6 +13,7 @@ import AdminBrands from "./pages/admin/AdminBrands"
 import CreateBlog from "./pages/admin/CreateBlog"
 import EditBlog from "./pages/admin/EditBlog"
 import AdminLayout from "./components/admin/AdminLayout"
+import Footer from "./components/Footer"
 import "./App.css"
 
 function App() {
@@ -109,6 +110,7 @@ function App() {
               }
             />
           </Routes>
+          <Footer />
         </div>
       </Router>
     </AuthProvider>
