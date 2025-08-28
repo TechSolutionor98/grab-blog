@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "react-router-dom"
 import BlogCard from "../components/BlogCard"
 import CategoryFilter from "../components/CategoryFilter"
@@ -14,6 +14,14 @@ const Home = () => {
   const ITEMS_PER_VIEW = 3
   const [currentIndex, setCurrentIndex] = useState(ITEMS_PER_VIEW)
   const [enableTransition, setEnableTransition] = useState(true)
+  // Show gutters only while the slider is animating
+  const [isAnimating, setIsAnimating] = useState(false)
+  // Pause autoplay when hovering hero cards
+  const [isPaused, setIsPaused] = useState(false)
+  // Viewport width for precise pixel math (keeps card size constant)
+  const viewportRef = useRef(null)
+  const trackRef = useRef(null)
+  const [viewportWidth, setViewportWidth] = useState(0)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState("")
@@ -42,6 +50,25 @@ const Home = () => {
       fetchLatestBlogs(1, true)
     }
   }, [currentPage, selectedCategory, searchQuery])
+
+  // Observe viewport width to compute exact slide width and pixel-based movement
+  useEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+    const update = () => setViewportWidth(el.clientWidth || 0)
+    update()
+    let ro
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(update)
+      ro.observe(el)
+    } else {
+      window.addEventListener("resize", update)
+    }
+    return () => {
+      if (ro) ro.disconnect()
+      else window.removeEventListener("resize", update)
+    }
+  }, [])
 
   const fetchBlogs = async () => {
     setLoading(true)
@@ -134,11 +161,16 @@ const Home = () => {
   const useLoop = featuredBlogs && featuredBlogs.length > ITEMS_PER_VIEW
   useEffect(() => {
     if (!useLoop) return
+    if (isPaused) return
     const id = setInterval(() => {
-      setCurrentIndex((idx) => idx + 1)
-    }, 3000)
+      // Skip if we are already animating to avoid stacked transitions
+      if (isAnimating) return
+      setIsAnimating(true)
+      // Defer the index change to the next frame to avoid layout jump
+      requestAnimationFrame(() => setCurrentIndex((idx) => idx + 1))
+    }, 2600)
     return () => clearInterval(id)
-  }, [useLoop])
+  }, [useLoop, isAnimating, isPaused])
 
   // Build slides with clones at both ends for seamless loop
   const slides = (() => {
@@ -148,6 +180,17 @@ const Home = () => {
     const endClones = featuredBlogs.slice(0, ITEMS_PER_VIEW)
     return [...startClones, ...featuredBlogs, ...endClones]
   })()
+
+  // Pixel math for smooth motion with dynamic gutters without shrinking cards
+  const slideWidthPx = viewportWidth > 0 ? viewportWidth / ITEMS_PER_VIEW : 0
+  // Larger, more noticeable gap while animating (responsive)
+  const gapPx = isAnimating
+    ? (viewportWidth >= 1024
+        ? 32
+        : viewportWidth >= 640
+          ? 28
+          : 20)
+    : 0
 
   const fetchTrendingBlogs = async () => {
     try {
@@ -304,15 +347,29 @@ const Home = () => {
       {/* Hero Section - Featured Blogs (3 up, step-by-step slider) */}
   <section className="w-full">
         {featuredBlogs && featuredBlogs.length > 0 && (
-          <div className="relative">
+          <div className="relative group">
       {/* Track container with clipping */}
-      <div className="overflow-hidden">
+      <div
+        className="overflow-hidden"
+        ref={viewportRef}
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
               <div
-        className="flex"
+        ref={trackRef}
+        className={`flex`}
                 style={{
                   width: "100%",
-                  transform: useLoop ? `translateX(-${currentIndex * (100 / ITEMS_PER_VIEW)}%)` : "translateX(0)",
-                  transition: useLoop && enableTransition ? "transform 500ms ease-in-out" : "none",
+                  transform: useLoop
+                    ? (slideWidthPx
+                        ? `translate3d(-${currentIndex * slideWidthPx}px, 0, 0)`
+                        : `translate3d(-${currentIndex * (100 / ITEMS_PER_VIEW)}%, 0, 0)`) // fallback before measure
+                    : "translate3d(0, 0, 0)",
+                  transition:
+                    `${useLoop && enableTransition ? "transform 950ms cubic-bezier(0.2, 0.85, 0.2, 1)," : ""} margin 240ms ease-out`,
+                  willChange: "transform",
+                  marginLeft: isAnimating ? -gapPx / 2 : 0,
+                  marginRight: isAnimating ? -gapPx / 2 : 0,
                 }}
                 onTransitionEnd={() => {
                   if (!useLoop) return
@@ -321,34 +378,53 @@ const Home = () => {
                     setEnableTransition(false)
                     setCurrentIndex(ITEMS_PER_VIEW)
                     // Re-enable transition on next frame
-                    requestAnimationFrame(() => setEnableTransition(true))
+                    requestAnimationFrame(() => {
+                      const el = trackRef.current
+                      if (el) el.getBoundingClientRect() // force reflow
+                      requestAnimationFrame(() => setEnableTransition(true))
+                    })
                   }
                   // When we hit the cloned start, jump to last real slide without animation
                   if (currentIndex <= ITEMS_PER_VIEW - 1) {
                     setEnableTransition(false)
                     setCurrentIndex(featuredBlogs.length + ITEMS_PER_VIEW - 1)
-                    requestAnimationFrame(() => setEnableTransition(true))
+                    requestAnimationFrame(() => {
+                      const el = trackRef.current
+                      if (el) el.getBoundingClientRect()
+                      requestAnimationFrame(() => setEnableTransition(true))
+                    })
                   }
+                  // Animation completed; hide gutters again
+                  setIsAnimating(false)
                 }}
               >
               {slides.map((blog, i) => (
-                <div key={`${blog._id}-${i}`} className="" style={{ minWidth: `${100 / ITEMS_PER_VIEW}%` }}>
+                <div
+                  key={`${blog._id}-${i}`}
+                  style={{
+                    flex: "0 0 auto",
+                    width: slideWidthPx ? `${slideWidthPx}px` : `${100 / ITEMS_PER_VIEW}%`,
+                    marginLeft: isAnimating ? gapPx / 2 : 0,
+                    marginRight: isAnimating ? gapPx / 2 : 0,
+                    transition: "margin 240ms ease-out",
+                  }}
+                >
                   {/* Preserve original card layout */}
-                  <div className="relative group cursor-pointer overflow-hidden">
+                  <div className="relative group cursor-pointer overflow-hidden mt-0.5">
                     <div className="aspect-[4/3] relative">
                       <img
                         src={blog.featuredImage?.url || "/placeholder.svg?height=300&width=400"}
                         alt={blog.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-6">
-                        <div className="text-white">
-                          <div
+                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end justify-center p-6">
+                        <div className="text-white text-center w-full">
+                          {/* <div
                             className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-3"
                             style={{ backgroundColor: blog.category?.color || "#2563eb" }}
                           >
                             {blog.category?.name}
-                          </div>
+                          </div> */}
                           <h3 className="text-xl font-bold mb-2 line-clamp-2">{blog.title}</h3>
                           {/* <p className="text-sm opacity-90 line-clamp-2">{blog.excerpt}</p> */}
                         </div>
@@ -360,7 +436,15 @@ const Home = () => {
               {/* Placeholders to keep 3-up layout if fewer items and no loop */}
               {!useLoop && featuredBlogs.length > 0 && featuredBlogs.length < ITEMS_PER_VIEW &&
                 Array.from({ length: ITEMS_PER_VIEW - featuredBlogs.length }).map((_, i) => (
-                  <div key={`ph-${i}`} className="" style={{ minWidth: `${100 / ITEMS_PER_VIEW}%` }}>
+                  <div
+                    key={`ph-${i}`}
+                    style={{
+                      flex: "0 0 auto",
+                      width: slideWidthPx ? `${slideWidthPx}px` : `${100 / ITEMS_PER_VIEW}%`,
+                      marginLeft: isAnimating ? gapPx / 2 : 0,
+                      marginRight: isAnimating ? gapPx / 2 : 0,
+                    }}
+                  >
                     <div className="relative">
                       <div className="aspect-[4/3] bg-gray-100" />
                     </div>
@@ -375,16 +459,24 @@ const Home = () => {
                 <button
                   type="button"
                   aria-label="Previous"
-                  onClick={() => setCurrentIndex((idx) => idx - 1)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
+                  onClick={() => {
+                    if (isAnimating) return
+                    setIsAnimating(true)
+                    setCurrentIndex((idx) => idx - 1)
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
                 >
                   <ChevronLeft className="mx-auto" size={20} />
                 </button>
                 <button
                   type="button"
                   aria-label="Next"
-                  onClick={() => setCurrentIndex((idx) => idx + 1)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
+                  onClick={() => {
+                    if (isAnimating) return
+                    setIsAnimating(true)
+                    setCurrentIndex((idx) => idx + 1)
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
                 >
                   <ChevronRight className="mx-auto" size={20} />
                 </button>
