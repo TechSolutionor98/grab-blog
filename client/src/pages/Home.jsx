@@ -300,15 +300,15 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+  <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Hero Section - Featured Blogs (3 up, step-by-step slider) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <section className="w-full">
         {featuredBlogs && featuredBlogs.length > 0 && (
           <div className="relative">
-            {/* Track container with clipping */}
-            <div className="overflow-hidden">
+      {/* Track container with clipping */}
+      <div className="overflow-hidden">
               <div
-                className="flex -mx-3"
+        className="flex"
                 style={{
                   width: "100%",
                   transform: useLoop ? `translateX(-${currentIndex * (100 / ITEMS_PER_VIEW)}%)` : "translateX(0)",
@@ -332,9 +332,9 @@ const Home = () => {
                 }}
               >
               {slides.map((blog, i) => (
-                <div key={`${blog._id}-${i}`} className="pl-6" style={{ minWidth: `${100 / ITEMS_PER_VIEW}%` }}>
+                <div key={`${blog._id}-${i}`} className="" style={{ minWidth: `${100 / ITEMS_PER_VIEW}%` }}>
                   {/* Preserve original card layout */}
-                  <div className="relative group cursor-pointer overflow-hidden rounded-lg">
+                  <div className="relative group cursor-pointer overflow-hidden">
                     <div className="aspect-[4/3] relative">
                       <img
                         src={blog.featuredImage?.url || "/placeholder.svg?height=300&width=400"}
@@ -360,8 +360,8 @@ const Home = () => {
               {/* Placeholders to keep 3-up layout if fewer items and no loop */}
               {!useLoop && featuredBlogs.length > 0 && featuredBlogs.length < ITEMS_PER_VIEW &&
                 Array.from({ length: ITEMS_PER_VIEW - featuredBlogs.length }).map((_, i) => (
-                  <div key={`ph-${i}`} className="px-3" style={{ minWidth: `${100 / ITEMS_PER_VIEW}%` }}>
-                    <div className="relative rounded-lg">
+                  <div key={`ph-${i}`} className="" style={{ minWidth: `${100 / ITEMS_PER_VIEW}%` }}>
+                    <div className="relative">
                       <div className="aspect-[4/3] bg-gray-100" />
                     </div>
                   </div>
@@ -376,7 +376,7 @@ const Home = () => {
                   type="button"
                   aria-label="Previous"
                   onClick={() => setCurrentIndex((idx) => idx - 1)}
-                  className="absolute -left-6 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
                 >
                   <ChevronLeft className="mx-auto" size={20} />
                 </button>
@@ -384,7 +384,7 @@ const Home = () => {
                   type="button"
                   aria-label="Next"
                   onClick={() => setCurrentIndex((idx) => idx + 1)}
-                  className="absolute -right-6 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
                 >
                   <ChevronRight className="mx-auto" size={20} />
                 </button>
