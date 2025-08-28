@@ -196,7 +196,7 @@ const Home = () => {
     try {
   // Fetch only blogs marked as Trending This Week
   // Prefer the dedicated endpoint; fallback kept simple if needed
-  const response = await fetch("/api/blogs/trending?limit=4")
+  const response = await fetch("/api/blogs/trending?limit=20")
       const data = await response.json()
       if (response.ok) {
   const list = Array.isArray(data) ? data : data.blogs
@@ -417,7 +417,7 @@ const Home = () => {
                         alt={blog.title}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0  flex items-end justify-center p-6">
+                      <div className="absolute inset-0 bg-black bg-opacity-10 flex items-end justify-center p-6">
                         <div className="text-white text-center w-full">
                           {/* <div
                             className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-3"
@@ -493,32 +493,44 @@ const Home = () => {
             <h2 className="text-3xl font-bold text-gray-900 mb-2">BLOGS TRENDING THIS WEEK</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {(Array.isArray(trendingBlogs) ? trendingBlogs : []).map((blog) => (
+          {(() => {
+            const trendingList = Array.isArray(trendingBlogs) ? trendingBlogs : []
+            const scrollable = trendingList.length > 4
+            return (
               <div
-                key={blog._id}
-                className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                className={
+                  scrollable
+                    ? "flex gap-6 overflow-x-auto pb-4 no-scrollbar"
+                    : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                }
               >
-                <div className="aspect-square relative">
-                  <img
-                    src={blog.featuredImage?.url || "/placeholder.svg?height=250&width=250"}
-                    alt={blog.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-4">
+                {trendingList.map((blog) => (
                   <div
-                    className="inline-block px-2 py-1 rounded text-xs font-medium text-white mb-2"
-                    style={{ backgroundColor: blog.category?.color || "#2563eb" }}
+                    key={blog._id}
+                    className={`${scrollable ? "flex-none w-full md:w-[calc((100%-24px)/2)] lg:w-[calc((100%-72px)/4)]" : ""} bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow`}
                   >
-                    {blog.category?.name}
+                    <div className="aspect-square relative">
+                      <img
+                        src={blog.featuredImage?.url || "/placeholder.svg?height=250&width=250"}
+                        alt={blog.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <div
+                        className="inline-block px-2 py-1 rounded text-xs font-medium text-white mb-2"
+                        style={{ backgroundColor: blog.category?.color || "#2563eb" }}
+                      >
+                        {blog.category?.name}
+                      </div>
+                      <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{blog.title}</h3>
+                      <p className="text-sm text-gray-600 line-clamp-2">{blog.excerpt}</p>
+                    </div>
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{blog.title}</h3>
-                  <p className="text-sm text-gray-600 line-clamp-2">{blog.excerpt}</p>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )
+          })()}
         </div>
       </section>
 
