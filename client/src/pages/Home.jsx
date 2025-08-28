@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useSearchParams } from "react-router-dom"
+import { useSearchParams, Link } from "react-router-dom"
 import BlogCard from "../components/BlogCard"
 import CategoryFilter from "../components/CategoryFilter"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -31,6 +31,10 @@ const Home = () => {
   // Latest (homepage) incremental state
   const [latestPage, setLatestPage] = useState(1)
   const [latestHasMore, setLatestHasMore] = useState(false)
+  // Trending horizontal scroll state
+  const trendingRef = useRef(null)
+  const [trendCanLeft, setTrendCanLeft] = useState(false)
+  const [trendCanRight, setTrendCanRight] = useState(false)
 
   const currentPage = Number.parseInt(searchParams.get("page")) || 1
   const searchQuery = searchParams.get("search") || ""
@@ -69,6 +73,51 @@ const Home = () => {
       else window.removeEventListener("resize", update)
     }
   }, [])
+
+  // Update Trending arrows visibility based on scroll position
+  useEffect(() => {
+    const el = trendingRef.current
+    if (!el) return
+    const update = () => {
+      const maxScroll = el.scrollWidth - el.clientWidth
+      setTrendCanLeft(el.scrollLeft > 2)
+      setTrendCanRight(el.scrollLeft < maxScroll - 2)
+    }
+    update()
+    const onScroll = () => update()
+    el.addEventListener("scroll", onScroll, { passive: true })
+    window.addEventListener("resize", update)
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null
+    if (ro) ro.observe(el)
+    return () => {
+      el.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", update)
+      if (ro) ro.disconnect()
+    }
+  }, [trendingBlogs])
+
+  const scrollTrending = (dir) => {
+    const el = trendingRef.current
+    if (!el) return
+    // Calculate exact step: distance from one card to the next (width + gap)
+    let step = 0
+    const first = el.firstElementChild
+    if (first) {
+      const second = first.nextElementSibling
+      if (second) {
+        const r1 = first.getBoundingClientRect()
+        const r2 = second.getBoundingClientRect()
+        step = Math.round(r2.left - r1.left)
+      } else {
+        step = Math.round(first.getBoundingClientRect().width)
+      }
+    }
+    if (!step) {
+      // Fallback: approximate a single card width
+      step = Math.max(Math.round(el.clientWidth / 4), 200)
+    }
+    el.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" })
+  }
 
   const fetchBlogs = async () => {
     setLoading(true)
@@ -410,27 +459,22 @@ const Home = () => {
                   }}
                 >
                   {/* Preserve original card layout */}
-                  <div className="relative group cursor-pointer overflow-hidden mt-0.5">
-                    <div className="aspect-[4/3] relative">
-                      <img
-                        src={blog.featuredImage?.url || "/placeholder.svg?height=300&width=400"}
-                        alt={blog.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-10 flex items-end justify-center p-6">
-                        <div className="text-white text-center w-full">
-                          {/* <div
-                            className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-3"
-                            style={{ backgroundColor: blog.category?.color || "#2563eb" }}
-                          >
-                            {blog.category?.name}
-                          </div> */}
-                          <h3 className="text-xl font-bold mb-2 line-clamp-2">{blog.title}</h3>
-                          {/* <p className="text-sm opacity-90 line-clamp-2">{blog.excerpt}</p> */}
+                  <Link to={`/blog/${blog.slug}`} className="block">
+                    <div className="relative group cursor-pointer overflow-hidden mt-0.5">
+                      <div className="aspect-[4/3] relative">
+                        <img
+                          src={blog.featuredImage?.url || "/placeholder.svg?height=300&width=400"}
+                          alt={blog.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-10 flex items-end justify-center p-6">
+                          <div className="text-white text-center w-full">
+                            <h3 className="text-xl font-bold mb-2 line-clamp-2">{blog.title}</h3>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 </div>
               ))}
               {/* Placeholders to keep 3-up layout if fewer items and no loop */}
@@ -497,37 +541,64 @@ const Home = () => {
             const trendingList = Array.isArray(trendingBlogs) ? trendingBlogs : []
             const scrollable = trendingList.length > 4
             return (
-              <div
-                className={
-                  scrollable
-                    ? "flex gap-6 overflow-x-auto pb-4 no-scrollbar"
-                    : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-                }
-              >
-                {trendingList.map((blog) => (
-                  <div
-                    key={blog._id}
-                    className={`${scrollable ? "flex-none w-full md:w-[calc((100%-24px)/2)] lg:w-[calc((100%-72px)/4)]" : ""} bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow`}
+              <div className="relative">
+                <div
+                  ref={trendingRef}
+                  className={
+                    scrollable
+                      ? "flex gap-6 overflow-x-auto pb-4 no-scrollbar scroll-smooth"
+                      : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                  }
+                >
+                  {trendingList.map((blog) => (
+                    <div
+                      key={blog._id}
+                      className={`${scrollable ? "flex-none w-full md:w-[calc((100%-24px)/2)] lg:w-[calc((100%-72px)/4)]" : ""}`}
+                    >
+                      <Link to={`/blog/${blog.slug}`} className="block bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div className="aspect-square relative">
+                          <img
+                            src={blog.featuredImage?.url || "/placeholder.svg?height=250&width=250"}
+                            alt={blog.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="p-4">
+                          <div
+                            className="inline-block px-2 py-1 rounded text-xs font-medium text-white mb-2"
+                            style={{ backgroundColor: blog.category?.color || "#2563eb" }}
+                          >
+                            {blog.category?.name}
+                          </div>
+                          <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{blog.title}</h3>
+                          <p className="text-sm text-gray-600 line-clamp-2">{blog.excerpt}</p>
+                        </div>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+
+                {scrollable && trendCanLeft && (
+                  <button
+                    type="button"
+                    aria-label="Scroll left"
+                    onClick={() => scrollTrending("left")}
+                    className="hidden sm:flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
                   >
-                    <div className="aspect-square relative">
-                      <img
-                        src={blog.featuredImage?.url || "/placeholder.svg?height=250&width=250"}
-                        alt={blog.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <div
-                        className="inline-block px-2 py-1 rounded text-xs font-medium text-white mb-2"
-                        style={{ backgroundColor: blog.category?.color || "#2563eb" }}
-                      >
-                        {blog.category?.name}
-                      </div>
-                      <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{blog.title}</h3>
-                      <p className="text-sm text-gray-600 line-clamp-2">{blog.excerpt}</p>
-                    </div>
-                  </div>
-                ))}
+                    <ChevronLeft size={20} />
+                  </button>
+                )}
+
+                {scrollable && trendCanRight && (
+                  <button
+                    type="button"
+                    aria-label="Scroll right"
+                    onClick={() => scrollTrending("right")}
+                    className="hidden sm:flex items-center justify-center absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                )}
               </div>
             )
           })()}
