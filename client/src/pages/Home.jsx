@@ -50,7 +50,8 @@ const Home = () => {
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: "9",
+        // Show more results when searching
+        limit: searchQuery ? "60" : "9",
       })
 
       if (selectedCategory) {

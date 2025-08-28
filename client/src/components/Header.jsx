@@ -127,7 +127,7 @@ const Header = () => {
   }, [isMoreOpen])
 
   return (
-    <header className="bg-white -mt-3 shadow-sm border-b border-gray-200 pt-3">
+    <header className="bg-white shadow-sm border-b border-gray-200 pt-3 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto ">
         <div className="flex items-center justify-between my-3">
           {/* Logo */}
@@ -168,7 +168,7 @@ const Header = () => {
           {/* Shop Button */}
           <Link
             to="/shop"
-            className="hidden md:flex items-center space-x-2 px-6 py-2 border-2 border-black text-black hover:bg-black hover:text-white transition-colors font-medium"
+            className="hidden md:flex items-center space-x-2 px-6 py-2 border-2 border-lime-300 text-black hover:bg-lime-500 hover:text-white transition-colors font-medium"
           >
             <ShoppingBag size={18} />
             <span>Shop Now</span>

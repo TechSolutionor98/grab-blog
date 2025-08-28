@@ -3,6 +3,8 @@ const mongoose = require("mongoose")
 const { body, validationResult } = require("express-validator")
 const Blog = require("../models/Blog")
 const Category = require("../models/Category")
+const Topic = require("../models/Topic")
+const Brand = require("../models/Brand")
 const { auth, adminAuth } = require("../middleware/auth")
 
 const router = express.Router()
@@ -13,7 +15,7 @@ const router = express.Router()
 router.get("/", async (req, res) => {
   try {
     const page = Number.parseInt(req.query.page) || 1
-    const limit = Number.parseInt(req.query.limit) || 10
+    const limit = Math.min(Number.parseInt(req.query.limit) || 10, 200) // cap to avoid extreme loads
     const category = req.query.category
     const search = req.query.search
   const sort = req.query.sort || "-publishedAt"
@@ -31,7 +33,48 @@ router.get("/", async (req, res) => {
     }
 
     if (search) {
-      query.$text = { $search: search }
+      // Normalize and tokenize search input; ignore very short tokens
+      const normalized = String(search)
+        .replace(/[^\p{L}\p{N}\s]+/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+
+      const tokens = Array.from(
+        new Set(
+          normalized
+            .split(" ")
+            .map((t) => t.trim())
+            .filter((t) => t.length >= 2),
+        ),
+      )
+
+      if (tokens.length > 0) {
+        const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+        const pattern = tokens.map(escapeRegExp).join("|")
+        const regex = new RegExp(pattern, "i")
+
+        // Find matching related entities by name
+        const [matchedCategories, matchedTopics, matchedBrands] = await Promise.all([
+          Category.find({ name: { $regex: regex } }, { _id: 1 }).lean(),
+          Topic.find({ name: { $regex: regex } }, { _id: 1 }).lean(),
+          Brand.find({ name: { $regex: regex } }, { _id: 1 }).lean(),
+        ])
+
+        const catIds = matchedCategories.map((c) => c._id)
+        const topicIds = matchedTopics.map((t) => t._id)
+        const brandIds = matchedBrands.map((b) => b._id)
+
+        query.$or = [
+          { title: { $regex: regex } },
+          { excerpt: { $regex: regex } },
+          { content: { $regex: regex } },
+          { "seo.metaDescription": { $regex: regex } },
+          { tags: { $regex: regex } }, // matches any tag containing token
+        ]
+        if (catIds.length) query.$or.push({ category: { $in: catIds } })
+        if (topicIds.length) query.$or.push({ topic: { $in: topicIds } })
+        if (brandIds.length) query.$or.push({ brand: { $in: brandIds } })
+      }
     }
 
     if (typeof featuredParam !== "undefined") {
