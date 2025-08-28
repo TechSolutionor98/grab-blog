@@ -278,6 +278,7 @@ const BlogDetail = () => {
               </div>
             )}
 
+
             {/* Author Info */}
             <div className="px-8 py-6 border-t border-gray-200 bg-white">
               <div className="flex items-center">
