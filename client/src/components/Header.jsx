@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Search, Menu, X, ShoppingBag } from "lucide-react"
+import { Search, Menu, X, ShoppingBag, LayoutGrid, ChevronRight } from "lucide-react"
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState("")
@@ -11,6 +11,7 @@ const Header = () => {
   const [visibleCount, setVisibleCount] = useState(null) // number of categories (excluding "All in one") visible in the centered row
   const [isMoreOpen, setIsMoreOpen] = useState(false)
   const [showLogo, setShowLogo] = useState(true)
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
 
   const navListRef = useRef(null)
   const allInOneRef = useRef(null)
@@ -127,12 +128,78 @@ const Header = () => {
   }, [isMoreOpen])
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 pt-3 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto ">
-        <div className="flex items-center justify-between my-3">
-          {/* Logo */}
+    <header className="bg-white shadow-sm border-b border-gray-200  sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto">
+        {/* Mobile top bar: left categories toggle, centered logo, right search icon */}
+        <div className="md:hidden grid grid-cols-3 items-center py-3 px-2">
+          <div className="pl-1">
+            <button
+              className="p-2 text-gray-700 hover:text-gray-900"
+              aria-label="Toggle categories"
+              onClick={() => {
+                setIsMenuOpen((v) => !v)
+                setIsMobileSearchOpen(false)
+              }}
+            >
+              {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
+          <div className="flex items-center justify-center">
+            <Link to="/" className="inline-flex items-center">
+              {showLogo ? (
+                <img
+                  src="/admin-logo.svg"
+                  alt="GrabaZz logo"
+                  className="h-8 w-auto object-contain"
+                  onError={() => setShowLogo(false)}
+                />
+              ) : (
+                <span className="text-lg font-bold text-gray-900">GrabaZz</span>
+              )}
+            </Link>
+          </div>
+          <div className="flex items-center justify-end pr-1">
+            <button
+              className="p-2 text-gray-700 hover:text-gray-900"
+              aria-label="Search"
+              onClick={() => {
+                setIsMobileSearchOpen((v) => !v)
+                setIsMenuOpen(false)
+              }}
+            >
+              <Search size={22} />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile search dropdown */}
+        {isMobileSearchOpen && (
+          <div className="md:hidden px-2 pb-3">
+            <form onSubmit={handleSearch} className="w-full">
+              <div className="flex items-center gap-2 bg-white border border-gray-300">
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 h-10 px-3 outline-none"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  aria-label="Search"
+                  className="h-10 w-12 bg-lime-500 text-white flex items-center justify-center hover:bg-lime-600 transition-colors"
+                >
+                  <Search size={16} />
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Desktop/Laptop header row (unchanged) */}
+        <div className="hidden md:flex items-center justify-between my-3">
           <Link to="/" className="flex items-center space-x-2">
-           
             {showLogo ? (
               <img
                 src="/admin-logo.svg"
@@ -144,8 +211,6 @@ const Header = () => {
               <h1 className="text-xl font-bold text-gray-900">GrabaZz</h1>
             )}
           </Link>
-
-          {/* Search Bar - Center */}
           <form onSubmit={handleSearch} className="flex-1 max-w-lg mx-8">
             <div className="flex items-center gap-2">
               <input
@@ -164,8 +229,6 @@ const Header = () => {
               </button>
             </div>
           </form>
-
-          {/* Shop Button */}
           <Link
             to="https://www.grabatoz.ae/"
             target="_blank"
@@ -174,25 +237,17 @@ const Header = () => {
             <ShoppingBag size={18} />
             <span>Shop Now</span>
           </Link>
-
-          {/* Mobile Menu Toggle */}
-          <button
-            className="md:hidden p-2 text-gray-600 hover:text-gray-900"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
         </div>
 
-        <div className="bg-lime-500 py-2 -mx-4 sm:-mx-6 lg:-mx-8">
+        <div className="bg-lime-500 py-2 -mx-4 sm:-mx-6 lg:-mx-8 hidden md:block">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Desktop categories: centered; show More only when needed */}
-            <nav className="hidden md:flex py-1">
+            <nav className="py-1">
               <ul
                 ref={navListRef}
                 className="flex w-full items-center justify-center gap-12 whitespace-nowrap overflow-visible relative"
               >
-                {/* More dropdown (only render when overflow) - now on the left */}
+                {/* More dropdown (only render when overflow) - on the left */}
                 {overflowExists && (
                   <li className="relative">
                     <button
@@ -207,10 +262,10 @@ const Header = () => {
                     </button>
                     {isMoreOpen && (
                       <div className="absolute left-0 top-full mt-2 min-w-44 rounded-md bg-white py-2 shadow-lg ring-1 ring-black/10 z-20">
-            {categories.slice(visibleCount ?? 0).map((category) => (
+                        {categories.slice(visibleCount ?? 0).map((category) => (
                           <Link
                             key={category._id}
-              to={`/category/${category._id}`}
+                            to={`/category/${category._id}`}
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                             onClick={() => setIsMoreOpen(false)}
                           >
@@ -241,7 +296,7 @@ const Header = () => {
                   </li>
                 ))}
 
-                {/* Offscreen measuring container: render all items for accurate widths */}
+                {/* Offscreen measuring container */}
                 <li className="absolute -left-[9999px] top-auto" aria-hidden="true">
                   {categories.map((category, idx) => (
                     <span
@@ -253,48 +308,68 @@ const Header = () => {
                     </span>
                   ))}
                 </li>
-
-                
               </ul>
             </nav>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Categories Drawer */}
         {isMenuOpen && (
-          <nav className="md:hidden bg-white border-t border-gray-200 py-4">
-            <div className="space-y-2">
-              <Link
-                to="/"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                All in one
-              </Link>
-              <div className="px-4 py-2">
-                <h3 className="font-medium text-gray-900 mb-2">Categories</h3>
-                <div className="space-y-1 ml-4">
+          <div className="md:hidden fixed inset-0 z-50">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setIsMenuOpen(false)}
+              aria-hidden="true"
+            />
+            {/* Drawer */}
+            <nav className="absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-xl flex flex-col">
+              {/* Drawer Header: first bar styled exactly like the screenshot */}
+              <div className="">
+                <div className="flex items-center justify-between bg-lime-500 text-white h-12 w-full px-3">
+                  <button
+                    onClick={() => {
+                      navigate("/")
+                      setIsMenuOpen(false)
+                    }}
+                    className="flex items-center gap-2">
+                    <LayoutGrid size={18} />
+                    <span className="font-xl text-lg">All Categories</span>
+                  </button>
+                  <button
+                    onClick={() => setIsMenuOpen(false)}
+                    aria-label="Close categories"
+                    className="text-white">
+                    <X size={22} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Items */}
+              <div className="flex-1 overflow-y-auto">
+                {/* All in one row intentionally omitted here; styled as header above */}
+
+                {/* Categories list */}
+                <div className="py-1">
                   {categories.map((category) => (
                     <Link
                       key={category._id}
                       to={`/category/${category._id}`}
-                      className="block py-1 text-gray-600 hover:text-lime-500"
                       onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-gray-800 text-medium font-medium"
                     >
-                      {category.name}
+                      <span>{category.name}</span>
+                      <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-lime-500 text-white">
+                        <ChevronRight size={18} />
+                      </span>
                     </Link>
                   ))}
                 </div>
               </div>
-              <Link
-                to="/shop"
-                className="block mx-4 mt-4 px-4 py-2 bg-lime-500 text-white text-center rounded-lg hover:bg-lime-600"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Shop Now
-              </Link>
-            </div>
-          </nav>
+
+              {/* Footer CTA removed as requested */}
+            </nav>
+          </div>
         )}
       </div>
     </header>
