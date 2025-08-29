@@ -42,7 +42,7 @@ function App() {
               }
             />
             <Route
-              path="/category/:slug"
+              path="/category/:categoryId"
               element={
                 <>
                   <Header />

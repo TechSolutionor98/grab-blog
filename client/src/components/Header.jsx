@@ -167,8 +167,9 @@ const Header = () => {
 
           {/* Shop Button */}
           <Link
-            to="/shop"
-            className="hidden md:flex items-center space-x-2 px-6 py-2 border-2 border-lime-300 text-black hover:bg-lime-500 hover:text-white transition-colors font-medium"
+            to="https://www.grabatoz.ae/"
+            target="_blank"
+            className="hidden md:flex items-center space-x-2 px-6 py-2 border hover:border-2 border-gray-300 hover:border-lime-300 text-black hover:bg-lime-500 hover:text-white transition-colors font-medium"
           >
             <ShoppingBag size={18} />
             <span>Shop Now</span>
@@ -206,10 +207,10 @@ const Header = () => {
                     </button>
                     {isMoreOpen && (
                       <div className="absolute left-0 top-full mt-2 min-w-44 rounded-md bg-white py-2 shadow-lg ring-1 ring-black/10 z-20">
-                        {categories.slice(visibleCount ?? 0).map((category) => (
+            {categories.slice(visibleCount ?? 0).map((category) => (
                           <Link
                             key={category._id}
-                            to={`/category/${category._id}`}
+              to={`/category/${category._id}`}
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                             onClick={() => setIsMoreOpen(false)}
                           >

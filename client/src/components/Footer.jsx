@@ -67,7 +67,7 @@ const Footer = () => {
   }
 
   return (
-  <footer className="bg-[#1f1f39] text-white py-12">
+  <footer className="bg-[#1f1f39] text-white pt-12">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -147,7 +147,7 @@ const Footer = () => {
               {popularCategories.map((category) => (
                 <Link 
                   key={category._id} 
-                  to={`/category/${category.slug}`}
+                  to={`/category/${category._id}`}
                   className="flex items-center justify-between group p-2 rounded transition-colors"
                 >
                   <div className="flex items-center gap-2">
@@ -166,7 +166,7 @@ const Footer = () => {
         </div>
 
         {/* Brand Spotlight */}
-        <div className="border-t border-gray-800 mt-12 pt-10 text-center">
+        <div className="border-t border-gray-800 mt-12 pt-5 text-center">
           <div className="flex flex-col items-center gap-5">
             {/* Logo (replace src with V Perfumes white logo path) */}
             <img
@@ -211,10 +211,25 @@ const Footer = () => {
         </div>
 
         {/* Copyright Section */}
-        <div className="border-t border-gray-700 mt-12 pt-8 text-center">
-          <p className="text-sm text-gray-400">
-            © {new Date().getFullYear()} Your Blog Name. All rights reserved.
-          </p>
+        <div className="border-t border-gray-700 mt-12 py-5">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-white text-center md:text-left">
+              © {new Date().getFullYear()} Grabatoz Powered By Crown Excel
+            </p>
+            <nav aria-label="Footer links" className="text-sm">
+              <ul className="flex items-center gap-5 text-white">
+                <li>
+                <Link to="https://www.grabatoz.ae/privacy-policy" target='_blank' className="hover:text-white transition-colors">Privacy</Link>
+                </li>
+                <li>
+                  <Link to="https://www.grabatoz.ae/disclaimer-policy" target='_blank' className="hover:text-white transition-colors">Disclaimer</Link>
+                </li>
+                <li>
+                  <Link to="https://www.grabatoz.ae/contact" target='_blank' className="hover:text-white transition-colors">Contact</Link>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
       </div>
     </footer>

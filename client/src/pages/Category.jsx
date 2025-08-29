@@ -83,18 +83,16 @@ const Category = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Category Header */}
         <div className="text-center mb-12">
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <span
               className="inline-flex items-center px-4 py-2 rounded-full text-lg font-medium text-white"
               style={{ backgroundColor: category.color }}
             >
               {category.name}
             </span>
-          </div>
+          </div> */}
           <h1 className="text-4xl font-bold text-gray-900 mb-4">{category.name} Blogs</h1>
-          {category.description && (
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">{category.description}</p>
-          )}
+          {/* Description removed per request */}
           {pagination.total && (
             <p className="text-gray-500">
               {pagination.total} blog{pagination.total !== 1 ? "s" : ""} in this category
