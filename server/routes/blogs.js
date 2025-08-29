@@ -457,6 +457,62 @@ router.get("/trending", async (req, res) => {
   }
 })
 
+// @route   GET /api/blogs/editors-pick
+// @desc    Get top blogs by views (default 3) as Editor's Pick
+// @access  Public
+router.get("/editors-pick", async (req, res) => {
+  try {
+    const limit = Math.min(Number.parseInt(req.query.limit) || 3, 10)
+
+    const topByViews = await Blog.find({ status: "published" })
+      .populate("category", "name slug color")
+      .populate("author", "username avatar")
+      .sort({ views: -1, publishedAt: -1 })
+      .limit(limit)
+      .select("-content")
+
+    // Wrap in { data } to match client expectations
+    res.json({ data: topByViews })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Server error" })
+  }
+})
+
+// @route   GET /api/blogs/random
+// @desc    Get random published blogs (default 3)
+// @access  Public
+router.get("/random", async (req, res) => {
+  try {
+    const limit = Math.min(Number.parseInt(req.query.limit) || 3, 20)
+
+    // Sample random docs, then populate via a second query to keep code simple
+    const sampled = await Blog.aggregate([
+      { $match: { status: "published" } },
+      { $sample: { size: limit } },
+      { $project: { _id: 1 } },
+    ])
+
+    const ids = sampled.map((d) => d._id)
+    let blogs = []
+    if (ids.length) {
+      blogs = await Blog.find({ _id: { $in: ids } })
+        .populate("category", "name slug color")
+        .populate("author", "username avatar")
+        .select("-content")
+
+      // Preserve sampled order
+      const order = new Map(ids.map((id, idx) => [String(id), idx]))
+      blogs.sort((a, b) => (order.get(String(a._id)) ?? 0) - (order.get(String(b._id)) ?? 0))
+    }
+
+    res.json({ data: blogs })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Server error" })
+  }
+})
+
 // Keep slug route after specific routes like /trending to avoid conflicts
 // @route   GET /api/blogs/:slug
 // @desc    Get single blog by slug

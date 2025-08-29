@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { FaFacebookF, FaInstagram, FaLinkedinIn, FaPinterestP, FaYoutube } from 'react-icons/fa';
+import { FaXTwitter, FaTiktok } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
@@ -11,21 +13,22 @@ const Footer = () => {
     const fetchFooterData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch all data concurrently
         const [editorsResponse, randomResponse, categoriesResponse] = await Promise.all([
-          fetch('/api/blogs/editors-pick'),
-          fetch('/api/blogs/random'),
-          fetch('/api/categories/popular')
+          fetch('/api/blogs/editors-pick?limit=3'),
+          fetch('/api/blogs/random?limit=3'),
+          fetch('/api/categories/popular?limit=5')
         ]);
 
         const editorsData = await editorsResponse.json();
         const randomData = await randomResponse.json();
         const categoriesData = await categoriesResponse.json();
 
-        setEditorsPick(editorsData.data || []);
-        setRandomPosts(randomData.data || []);
-        setPopularCategories(categoriesData.data || []);
+        setEditorsPick(editorsData?.data ?? editorsData ?? []);
+        setRandomPosts(randomData?.data ?? randomData ?? []);
+        const cats = categoriesData?.data ?? categoriesData ?? [];
+        setPopularCategories(Array.isArray(cats) ? cats.filter(c => (c?.name || '').toLowerCase() !== 'all') : []);
       } catch (error) {
         console.error('Error fetching footer data:', error);
       } finally {
@@ -38,7 +41,7 @@ const Footer = () => {
 
   if (loading) {
     return (
-      <footer className="bg-gray-900 text-white py-12">
+  <footer className="bg-[#1f1f39] text-white py-12">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {[1, 2, 3].map((i) => (
@@ -64,10 +67,10 @@ const Footer = () => {
   }
 
   return (
-    <footer className="bg-gray-900 text-white py-12">
+  <footer className="bg-[#1f1f39] text-white py-12">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Editor's Pick Section */}
           <div>
             <div className="mb-6">
@@ -76,20 +79,20 @@ const Footer = () => {
             </div>
             <div className="space-y-4">
               {editorsPick.slice(0, 3).map((post) => (
-                <Link 
-                  key={post._id} 
+                <Link
+                  key={post._id}
                   to={`/blog/${post.slug}`}
-                  className="flex gap-4 group hover:opacity-80 transition-opacity"
+                  className="flex gap-4 group transition-opacity"
                 >
                   <div className="w-16 h-16 flex-shrink-0">
-                    <img 
-                      src={post.featuredImage || '/api/placeholder/64/64'} 
+                    <img
+                      src={post?.featuredImage?.url || '/api/placeholder/64/64'}
                       alt={post.title}
                       className="w-full h-full object-cover rounded"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium leading-tight group-hover:text-pink-400 transition-colors line-clamp-2">
+                    <h4 className="text-sm font-medium leading-tight group-hover:text-lime-300 transition-colors line-clamp-2">
                       {post.title}
                     </h4>
                     <p className="text-xs text-gray-400 mt-1">
@@ -109,20 +112,20 @@ const Footer = () => {
             </div>
             <div className="space-y-4">
               {randomPosts.slice(0, 3).map((post) => (
-                <Link 
-                  key={post._id} 
+                <Link
+                  key={post._id}
                   to={`/blog/${post.slug}`}
-                  className="flex gap-4 group hover:opacity-80 transition-opacity"
+                  className="flex gap-4 group transition-opacity"
                 >
                   <div className="w-16 h-16 flex-shrink-0">
-                    <img 
-                      src={post.featuredImage || '/api/placeholder/64/64'} 
+                    <img
+                      src={post?.featuredImage?.url || '/api/placeholder/64/64'}
                       alt={post.title}
                       className="w-full h-full object-cover rounded"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium leading-tight group-hover:text-pink-400 transition-colors line-clamp-2">
+                    <h4 className="text-sm font-medium  group-hover:text-lime-300 ">
                       {post.title}
                     </h4>
                     <p className="text-xs text-gray-400 mt-1">
@@ -145,19 +148,64 @@ const Footer = () => {
                 <Link 
                   key={category._id} 
                   to={`/category/${category.slug}`}
-                  className="flex items-center justify-between group hover:bg-gray-800 p-2 rounded transition-colors"
+                  className="flex items-center justify-between group p-2 rounded transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-400">▶</span>
-                    <span className="text-sm group-hover:text-orange-400 transition-colors">
+                    <span className="text-gray-400 transition-colors group-hover:text-lime-300"><strong>→</strong></span>
+                    <span className="text-sm font-medium transition-colors group-hover:text-lime-300">
                       {category.name}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
+                  <span className="text-xs text-white bg-gray-800 px-2 py-1 rounded">
                     ({category.postCount || 0})
                   </span>
                 </Link>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Brand Spotlight */}
+        <div className="border-t border-gray-800 mt-12 pt-10 text-center">
+          <div className="flex flex-col items-center gap-5">
+            {/* Logo (replace src with V Perfumes white logo path) */}
+            <img
+              src="/Black BG.png"
+              alt="Grab– White Logo"
+              className="h-14 w-auto opacity-90"
+              loading="lazy"
+            />
+
+            <p className="text-sm md:text-base text-gray-300 max-w-3xl leading-relaxed">
+              Graba2z is a UAE-based e-commerce platform specializing in premium tech products, including laptops, accessories, and gadgets. Established in 2025, it offers fast, secure delivery across the UAE through its user-friendly mobile app. Headquartered in Bur Dubai, Graba2z is committed to providing genuine products and exceptional customer service.
+            </p>
+
+            <div className="mt-2">
+              <span className="sr-only">Follow Us</span>
+              <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
+                {[
+                  { name: 'Facebook', href: 'https://www.facebook.com/grabatozae/', Icon: FaFacebookF, color: '#1877F2' },
+                  { name: 'X', href: 'https://x.com/GrabAtoz', Icon: FaXTwitter, color: '#000000' },
+                  { name: 'Instagram', href: 'https://www.instagram.com/grabatoz/', Icon: FaInstagram, color: '#E4405F' },
+                  { name: 'LinkedIn', href: 'https://www.linkedin.com/company/grabatozae', Icon: FaLinkedinIn, color: '#0A66C2' },
+                  { name: 'Pinterest', href: 'https://www.pinterest.com/grabatoz/', Icon: FaPinterestP, color: '#E60023' },
+                  { name: 'TikTok', href: 'https://www.tiktok.com/@grabatoz', Icon: FaTiktok, color: '#000000' },
+                  { name: 'YouTube', href: 'https://www.youtube.com/@grabAtoZ', Icon: FaYoutube, color: '#FF0000' },
+                ].map(({ name, href, Icon, color }) => (
+                  <a
+                    key={name}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full bg-white border border-gray-200 text-current hover:bg-gray-50 transition-colors"
+                    style={{ color }}
+                    aria-label={name}
+                    title={name}
+                  >
+                    <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -19,6 +19,40 @@ router.get("/", async (req, res) => {
   }
 })
 
+// @route   GET /api/categories/popular
+// @desc    Get active categories with post counts, sorted by count desc
+// @access  Public
+router.get("/popular", async (req, res) => {
+  try {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 0, 50)
+    // Aggregate counts of published blogs per category
+    const counts = await Blog.aggregate([
+      { $match: { status: "published" } },
+      { $group: { _id: "$category", postCount: { $sum: 1 } } },
+    ])
+
+    const countMap = new Map(counts.map((c) => [String(c._id), c.postCount]))
+
+    // Fetch all active categories, attach postCount (0 if none), then sort desc by postCount
+    const categories = await Category.find({ isActive: true })
+      .select("name slug color isActive")
+      .lean()
+
+    let result = categories
+      .map((cat) => ({ ...cat, postCount: countMap.get(String(cat._id)) || 0 }))
+      .sort((a, b) => b.postCount - a.postCount)
+
+    if (limit > 0) {
+      result = result.slice(0, limit)
+    }
+
+    res.json({ data: result })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Server error" })
+  }
+})
+
 // @route   GET /api/categories/admin
 // @desc    Get all categories for admin
 // @access  Private (Admin)
