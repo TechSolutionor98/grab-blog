@@ -128,7 +128,7 @@ const Header = () => {
   }, [isMoreOpen])
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200  sticky top-0 z-50">
+    <header className="bg-white shadow-sm border-b border-gray-200  -mt-3  sm:pt-2 sticky -top-1 mb-2 z-50">
       <div className="max-w-7xl mx-auto">
         {/* Mobile top bar: left categories toggle, centered logo, right search icon */}
         <div className="md:hidden grid grid-cols-3 items-center py-3 px-2">
