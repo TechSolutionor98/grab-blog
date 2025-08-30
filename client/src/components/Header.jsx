@@ -161,13 +161,13 @@ const Header = () => {
           <div className="flex items-center justify-end pr-1">
             <button
               className="p-2 text-gray-700 hover:text-gray-900"
-              aria-label="Search"
+              aria-label={isMobileSearchOpen ? "Close search" : "Search"}
               onClick={() => {
                 setIsMobileSearchOpen((v) => !v)
                 setIsMenuOpen(false)
               }}
             >
-              <Search size={22} />
+              {isMobileSearchOpen ? <X size={22} /> : <Search size={22} />}
             </button>
           </div>
         </div>

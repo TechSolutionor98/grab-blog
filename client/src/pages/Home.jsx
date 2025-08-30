@@ -10,9 +10,9 @@ const Home = () => {
   const [blogs, setBlogs] = useState([])
   const [featuredBlogs, setFeaturedBlogs] = useState([])
   const [trendingBlogs, setTrendingBlogs] = useState([])
-  // Hero slider: show 3 cards, move by 1 card every 3s
-  const ITEMS_PER_VIEW = 3
-  const [currentIndex, setCurrentIndex] = useState(ITEMS_PER_VIEW)
+  // Hero slider: responsive cards per view (mobile 1, md 2, lg 3)
+  const [itemsPerView, setItemsPerView] = useState(3)
+  const [currentIndex, setCurrentIndex] = useState(3)
   const [enableTransition, setEnableTransition] = useState(true)
   // Show gutters only while the slider is animating
   const [isAnimating, setIsAnimating] = useState(false)
@@ -73,6 +73,24 @@ const Home = () => {
       else window.removeEventListener("resize", update)
     }
   }, [])
+
+  // Recompute itemsPerView when viewport width changes
+  useEffect(() => {
+    // Strict requirement: only mobile (<640px) shows 1; all larger screens keep 3 (unchanged)
+    const vw = typeof window !== "undefined" ? window.innerWidth : viewportWidth
+    const next = vw < 640 ? 1 : 3
+    if (next !== itemsPerView) {
+      // Reset index to align with new clones window
+      setEnableTransition(false)
+      setCurrentIndex(next)
+      setItemsPerView(next)
+      requestAnimationFrame(() => {
+        const el = trackRef.current
+        if (el) el.getBoundingClientRect()
+        requestAnimationFrame(() => setEnableTransition(true))
+      })
+    }
+  }, [viewportWidth])
 
   // Update Trending arrows visibility based on scroll position
   useEffect(() => {
@@ -196,9 +214,9 @@ const Home = () => {
       const response = await fetch("/api/blogs?limit=9&featured=true&sort=-publishedAt")
       const data = await response.json()
       if (response.ok) {
-        setFeaturedBlogs(data.blogs)
-        // Reset hero slider position when data changes
-        setCurrentIndex(ITEMS_PER_VIEW)
+  setFeaturedBlogs(data.blogs)
+  // Reset hero slider position when data changes
+  setCurrentIndex(itemsPerView)
         setEnableTransition(true)
       }
     } catch (error) {
@@ -207,7 +225,7 @@ const Home = () => {
   }
 
   // Auto-advance hero every 3 seconds (slides by 1 card)
-  const useLoop = featuredBlogs && featuredBlogs.length > ITEMS_PER_VIEW
+  const useLoop = featuredBlogs && featuredBlogs.length > itemsPerView
   useEffect(() => {
     if (!useLoop) return
     if (isPaused) return
@@ -225,13 +243,13 @@ const Home = () => {
   const slides = (() => {
     if (!featuredBlogs || featuredBlogs.length === 0) return []
     if (!useLoop) return featuredBlogs
-    const startClones = featuredBlogs.slice(-ITEMS_PER_VIEW)
-    const endClones = featuredBlogs.slice(0, ITEMS_PER_VIEW)
+  const startClones = featuredBlogs.slice(-itemsPerView)
+  const endClones = featuredBlogs.slice(0, itemsPerView)
     return [...startClones, ...featuredBlogs, ...endClones]
   })()
 
   // Pixel math for smooth motion with dynamic gutters without shrinking cards
-  const slideWidthPx = viewportWidth > 0 ? viewportWidth / ITEMS_PER_VIEW : 0
+  const slideWidthPx = viewportWidth > 0 ? viewportWidth / itemsPerView : 0
   // Larger, more noticeable gap while animating (responsive)
   const gapPx = isAnimating
     ? (viewportWidth >= 1024
@@ -412,7 +430,7 @@ const Home = () => {
                   transform: useLoop
                     ? (slideWidthPx
                         ? `translate3d(-${currentIndex * slideWidthPx}px, 0, 0)`
-                        : `translate3d(-${currentIndex * (100 / ITEMS_PER_VIEW)}%, 0, 0)`) // fallback before measure
+                        : `translate3d(-${currentIndex * (100 / itemsPerView)}%, 0, 0)`) // fallback before measure
                     : "translate3d(0, 0, 0)",
                   transition:
                     `${useLoop && enableTransition ? "transform 950ms cubic-bezier(0.2, 0.85, 0.2, 1)," : ""} margin 240ms ease-out`,
@@ -423,9 +441,9 @@ const Home = () => {
                 onTransitionEnd={() => {
                   if (!useLoop) return
                   // When we hit the cloned end, jump back to real first slide without animation
-                  if (currentIndex >= featuredBlogs.length + ITEMS_PER_VIEW) {
+                  if (currentIndex >= featuredBlogs.length + itemsPerView) {
                     setEnableTransition(false)
-                    setCurrentIndex(ITEMS_PER_VIEW)
+                    setCurrentIndex(itemsPerView)
                     // Re-enable transition on next frame
                     requestAnimationFrame(() => {
                       const el = trackRef.current
@@ -434,9 +452,9 @@ const Home = () => {
                     })
                   }
                   // When we hit the cloned start, jump to last real slide without animation
-                  if (currentIndex <= ITEMS_PER_VIEW - 1) {
+                  if (currentIndex <= itemsPerView - 1) {
                     setEnableTransition(false)
-                    setCurrentIndex(featuredBlogs.length + ITEMS_PER_VIEW - 1)
+                    setCurrentIndex(featuredBlogs.length + itemsPerView - 1)
                     requestAnimationFrame(() => {
                       const el = trackRef.current
                       if (el) el.getBoundingClientRect()
@@ -452,7 +470,7 @@ const Home = () => {
                   key={`${blog._id}-${i}`}
                   style={{
                     flex: "0 0 auto",
-                    width: slideWidthPx ? `${slideWidthPx}px` : `${100 / ITEMS_PER_VIEW}%`,
+                    width: slideWidthPx ? `${slideWidthPx}px` : `${100 / itemsPerView}%`,
                     marginLeft: isAnimating ? gapPx / 2 : 0,
                     marginRight: isAnimating ? gapPx / 2 : 0,
                     transition: "margin 240ms ease-out",
@@ -478,13 +496,13 @@ const Home = () => {
                 </div>
               ))}
               {/* Placeholders to keep 3-up layout if fewer items and no loop */}
-              {!useLoop && featuredBlogs.length > 0 && featuredBlogs.length < ITEMS_PER_VIEW &&
-                Array.from({ length: ITEMS_PER_VIEW - featuredBlogs.length }).map((_, i) => (
+              {!useLoop && featuredBlogs.length > 0 && featuredBlogs.length < itemsPerView &&
+                Array.from({ length: itemsPerView - featuredBlogs.length }).map((_, i) => (
                   <div
                     key={`ph-${i}`}
                     style={{
                       flex: "0 0 auto",
-                      width: slideWidthPx ? `${slideWidthPx}px` : `${100 / ITEMS_PER_VIEW}%`,
+                      width: slideWidthPx ? `${slideWidthPx}px` : `${100 / itemsPerView}%`,
                       marginLeft: isAnimating ? gapPx / 2 : 0,
                       marginRight: isAnimating ? gapPx / 2 : 0,
                     }}
