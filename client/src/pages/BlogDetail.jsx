@@ -303,6 +303,7 @@ const BlogDetail = () => {
                   </p>
                 </div>
               </div>
+              
                 <div className="sm:px-6 pt-6">
                   <div className="flex items-center gap-3 text-sm text-gray-600">
                     <Share2 size={18} className="text-lime-600" />
