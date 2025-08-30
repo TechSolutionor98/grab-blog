@@ -410,140 +410,156 @@ const Home = () => {
   }
 
   return (
-  <div className="min-h-screen bg-white overflow-x-hidden">
-      {/* Hero Section - Featured Blogs (3 up, step-by-step slider) */}
-  <section className="w-full">
+    <div className="min-h-screen bg-white overflow-x-hidden">
+      {/* Hero Section - Featured Blogs (mobile: 1 blog, desktop: unchanged) */}
+      <section className="w-full">
         {featuredBlogs && featuredBlogs.length > 0 && (
           <div className="relative group">
-      {/* Track container with clipping */}
-      <div
-        className="overflow-hidden"
-        ref={viewportRef}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-      >
-              <div
-        ref={trackRef}
-        className={`flex`}
-                style={{
-                  width: "100%",
-                  transform: useLoop
-                    ? (slideWidthPx
-                        ? `translate3d(-${currentIndex * slideWidthPx}px, 0, 0)`
-                        : `translate3d(-${currentIndex * (100 / itemsPerView)}%, 0, 0)`) // fallback before measure
-                    : "translate3d(0, 0, 0)",
-                  transition:
-                    `${useLoop && enableTransition ? "transform 950ms cubic-bezier(0.2, 0.85, 0.2, 1)," : ""} margin 240ms ease-out`,
-                  willChange: "transform",
-                  marginLeft: isAnimating ? -gapPx / 2 : 0,
-                  marginRight: isAnimating ? -gapPx / 2 : 0,
-                }}
-                onTransitionEnd={() => {
-                  if (!useLoop) return
-                  // When we hit the cloned end, jump back to real first slide without animation
-                  if (currentIndex >= featuredBlogs.length + itemsPerView) {
-                    setEnableTransition(false)
-                    setCurrentIndex(itemsPerView)
-                    // Re-enable transition on next frame
-                    requestAnimationFrame(() => {
-                      const el = trackRef.current
-                      if (el) el.getBoundingClientRect() // force reflow
-                      requestAnimationFrame(() => setEnableTransition(true))
-                    })
-                  }
-                  // When we hit the cloned start, jump to last real slide without animation
-                  if (currentIndex <= itemsPerView - 1) {
-                    setEnableTransition(false)
-                    setCurrentIndex(featuredBlogs.length + itemsPerView - 1)
-                    requestAnimationFrame(() => {
-                      const el = trackRef.current
-                      if (el) el.getBoundingClientRect()
-                      requestAnimationFrame(() => setEnableTransition(true))
-                    })
-                  }
-                  // Animation completed; hide gutters again
-                  setIsAnimating(false)
-                }}
-              >
-              {slides.map((blog, i) => (
-                <div
-                  key={`${blog._id}-${i}`}
-                  style={{
-                    flex: "0 0 auto",
-                    width: slideWidthPx ? `${slideWidthPx}px` : `${100 / itemsPerView}%`,
-                    marginLeft: isAnimating ? gapPx / 2 : 0,
-                    marginRight: isAnimating ? gapPx / 2 : 0,
-                    transition: "margin 240ms ease-out",
-                  }}
-                >
-                  {/* Preserve original card layout */}
-                  <Link to={`/blog/${blog.slug}`} className="block">
-                    <div className="relative group cursor-pointer overflow-hidden mt-0.5">
-                      <div className="aspect-[4/3] relative">
-                        <img
-                          src={blog.featuredImage?.url || "/placeholder.svg?height=300&width=400"}
-                          alt={blog.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-10 flex items-end justify-center p-6">
-                          <div className="text-white text-center w-full">
-                            <h3 className="text-xl font-bold mb-2 line-clamp-2">{blog.title}</h3>
-                          </div>
-                        </div>
+            {/* Mobile: show only first blog */}
+            <div className="block sm:hidden">
+              <Link to={`/blog/${featuredBlogs[0].slug}`} className="block">
+                <div className="relative group cursor-pointer overflow-hidden mt-0.5">
+                  <div className="aspect-[4/3] relative">
+                    <img
+                      src={featuredBlogs[0].featuredImage?.url || "/placeholder.svg?height=300&width=400"}
+                      alt={featuredBlogs[0].title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-10 flex items-end justify-center p-6">
+                      <div className="text-white text-center w-full">
+                        <h3 className="text-xl font-bold mb-2 line-clamp-2">{featuredBlogs[0].title}</h3>
                       </div>
                     </div>
-                  </Link>
-                </div>
-              ))}
-              {/* Placeholders to keep 3-up layout if fewer items and no loop */}
-              {!useLoop && featuredBlogs.length > 0 && featuredBlogs.length < itemsPerView &&
-                Array.from({ length: itemsPerView - featuredBlogs.length }).map((_, i) => (
-                  <div
-                    key={`ph-${i}`}
-                    style={{
-                      flex: "0 0 auto",
-                      width: slideWidthPx ? `${slideWidthPx}px` : `${100 / itemsPerView}%`,
-                      marginLeft: isAnimating ? gapPx / 2 : 0,
-                      marginRight: isAnimating ? gapPx / 2 : 0,
-                    }}
-                  >
-                    <div className="relative">
-                      <div className="aspect-[4/3] bg-gray-100" />
-                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              </Link>
             </div>
-
-            {/* Slider Arrows outside cards */}
-            {useLoop && (
-              <>
-                <button
-                  type="button"
-                  aria-label="Previous"
-                  onClick={() => {
-                    if (isAnimating) return
-                    setIsAnimating(true)
-                    setCurrentIndex((idx) => idx - 1)
+            {/* Desktop/laptop: keep slider as before */}
+            <div className="hidden sm:block">
+              {/* Track container with clipping */}
+              <div
+                className="overflow-hidden"
+                ref={viewportRef}
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+              >
+                <div
+                  ref={trackRef}
+                  className={`flex`}
+                  style={{
+                    width: "100%",
+                    transform: useLoop
+                      ? (slideWidthPx
+                          ? `translate3d(-${currentIndex * slideWidthPx}px, 0, 0)`
+                          : `translate3d(-${currentIndex * (100 / itemsPerView)}%, 0, 0)`)
+                      : "translate3d(0, 0, 0)",
+                    transition:
+                      `${useLoop && enableTransition ? "transform 950ms cubic-bezier(0.2, 0.85, 0.2, 1)," : ""} margin 240ms ease-out`,
+                    willChange: "transform",
+                    marginLeft: isAnimating ? -gapPx / 2 : 0,
+                    marginRight: isAnimating ? -gapPx / 2 : 0,
                   }}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
-                >
-                  <ChevronLeft className="mx-auto" size={20} />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Next"
-                  onClick={() => {
-                    if (isAnimating) return
-                    setIsAnimating(true)
-                    setCurrentIndex((idx) => idx + 1)
+                  onTransitionEnd={() => {
+                    if (!useLoop) return
+                    if (currentIndex >= featuredBlogs.length + itemsPerView) {
+                      setEnableTransition(false)
+                      setCurrentIndex(itemsPerView)
+                      requestAnimationFrame(() => {
+                        const el = trackRef.current
+                        if (el) el.getBoundingClientRect()
+                        requestAnimationFrame(() => setEnableTransition(true))
+                      })
+                    }
+                    if (currentIndex <= itemsPerView - 1) {
+                      setEnableTransition(false)
+                      setCurrentIndex(featuredBlogs.length + itemsPerView - 1)
+                      requestAnimationFrame(() => {
+                        const el = trackRef.current
+                        if (el) el.getBoundingClientRect()
+                        requestAnimationFrame(() => setEnableTransition(true))
+                      })
+                    }
+                    setIsAnimating(false)
                   }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
                 >
-                  <ChevronRight className="mx-auto" size={20} />
-                </button>
-              </>
-            )}
+                  {slides.map((blog, i) => (
+                    <div
+                      key={`${blog._id}-${i}`}
+                      style={{
+                        flex: "0 0 auto",
+                        width: slideWidthPx ? `${slideWidthPx}px` : `${100 / itemsPerView}%`,
+                        marginLeft: isAnimating ? gapPx / 2 : 0,
+                        marginRight: isAnimating ? gapPx / 2 : 0,
+                        transition: "margin 240ms ease-out",
+                      }}
+                    >
+                      <Link to={`/blog/${blog.slug}`} className="block">
+                        <div className="relative group cursor-pointer overflow-hidden mt-0.5">
+                          <div className="aspect-[4/3] relative">
+                            <img
+                              src={blog.featuredImage?.url || "/placeholder.svg?height=300&width=400"}
+                              alt={blog.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-10 flex items-end justify-center p-6">
+                              <div className="text-white text-center w-full">
+                                <h3 className="text-xl font-bold mb-2 line-clamp-2">{blog.title}</h3>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
+                  ))}
+                  {/* Placeholders to keep 3-up layout if fewer items and no loop */}
+                  {!useLoop && featuredBlogs.length > 0 && featuredBlogs.length < itemsPerView &&
+                    Array.from({ length: itemsPerView - featuredBlogs.length }).map((_, i) => (
+                      <div
+                        key={`ph-${i}`}
+                        style={{
+                          flex: "0 0 auto",
+                          width: slideWidthPx ? `${slideWidthPx}px` : `${100 / itemsPerView}%`,
+                          marginLeft: isAnimating ? gapPx / 2 : 0,
+                          marginRight: isAnimating ? gapPx / 2 : 0,
+                        }}
+                      >
+                        <div className="relative">
+                          <div className="aspect-[4/3] bg-gray-100" />
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+              {/* Slider Arrows outside cards */}
+              {useLoop && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Previous"
+                    onClick={() => {
+                      if (isAnimating) return
+                      setIsAnimating(true)
+                      setCurrentIndex((idx) => idx - 1)
+                    }}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
+                  >
+                    <ChevronLeft className="mx-auto" size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next"
+                    onClick={() => {
+                      if (isAnimating) return
+                      setIsAnimating(true)
+                      setCurrentIndex((idx) => idx + 1)
+                    }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
+                  >
+                    <ChevronRight className="mx-auto" size={20} />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         )}
       </section>
