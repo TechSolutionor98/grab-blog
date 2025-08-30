@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useParams, Link } from "react-router-dom"
 import { Calendar, User, Eye, ArrowLeft, Tag, Share2, ChevronRight } from "lucide-react"
 import RelatedPosts from "../components/RelatedPosts"
+import Comments from "../components/Comments"
 
 
 const BlogDetail = () => {
@@ -142,7 +143,7 @@ const BlogDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Reading progress bar */}
       <div
         className="fixed top-0 left-0 h-1 bg-lime-500 z-50"
@@ -172,7 +173,7 @@ const BlogDetail = () => {
         </nav>
         <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8">
           {/* Main */}
-          <article className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <article className="bg-white rounded-lg  overflow-hidden">
             {/* Header */}
             <header className="px-8 py-8 border-b border-gray-200">
               {/* Main image first */}
@@ -316,7 +317,7 @@ const BlogDetail = () => {
           {/* Sidebar */}
           <aside className="lg:sticky lg:top-24 h-max space-y-6">
             {/* Sidebar Ad at top */}
-            <div className="bg-white rounded-lg shadow-sm">
+            <div className="bg-white rounded-lg">
               <div className="px-5 pt-4">
               
               </div>
@@ -328,7 +329,7 @@ const BlogDetail = () => {
             </div>
             {/* Table of Contents */}
             {toc.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-5">
+              <div className="bg-white rounded-lg p-5">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Table of contents</h3>
                 <nav className="text-sm text-gray-700">
                   <ul className="space-y-2">
@@ -354,9 +355,9 @@ const BlogDetail = () => {
             )}
 
             {/* Author card small */}
-            <div className="bg-white rounded-lg shadow-sm p-5">
+            <div className="bg-white rounded-lg p-5">
               <div className="flex items-center gap-3">
-                {blog.author?.avatar ? (
+                {blog.author?.avatar && !String(blog.author.avatar).includes("via.placeholder.com") ? (
                   <img src={blog.author.avatar} alt={blog.author?.username} className="w-12 h-12 rounded-full object-cover" />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-lime-500 text-white flex items-center justify-center font-semibold">
@@ -372,7 +373,7 @@ const BlogDetail = () => {
 
             {/* Recent posts */}
             {recent.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-5">
+              <div className="bg-white rounded-lg p-5">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Recent posts</h3>
                 <ul className="space-y-3">
                   {recent.map((p) => (
@@ -402,8 +403,16 @@ const BlogDetail = () => {
           </aside>
         </div>
 
+
+           {/* Comments Section */}
+        <div className="mt-12 bg-white rounded-lg  p-8">
+          <Comments blogId={blog._id} blogTitle={blog.title} />
+        </div>
+
         {/* Related Posts */}
         <RelatedPosts blogId={blog._id} />
+
+     
       </div>
     </div>
   )

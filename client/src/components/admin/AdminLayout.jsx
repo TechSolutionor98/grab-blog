@@ -43,6 +43,11 @@ const AdminLayout = ({ children }) => {
       icon: Building,
       label: "Brands",
     },
+    {
+      path: "/admin/comments",
+      icon: FileText,
+      label: "Comments",
+    },
   ]
 
   const isActive = (path, exact = false) => {

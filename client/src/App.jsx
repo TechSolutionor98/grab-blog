@@ -10,6 +10,7 @@ import AdminBlogs from "./pages/admin/AdminBlogs"
 import AdminCategories from "./pages/admin/AdminCategories"
 import AdminTopics from "./pages/admin/AdminTopics"
 import AdminBrands from "./pages/admin/AdminBrands"
+import AdminComments from "./pages/admin/AdminComments"
 import CreateBlog from "./pages/admin/CreateBlog"
 import EditBlog from "./pages/admin/EditBlog"
 import AdminLayout from "./components/admin/AdminLayout"
@@ -106,6 +107,14 @@ function App() {
               element={
                 <AdminLayout>
                   <AdminBrands />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="/admin/comments"
+              element={
+                <AdminLayout>
+                  <AdminComments />
                 </AdminLayout>
               }
             />

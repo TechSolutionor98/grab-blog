@@ -20,6 +20,7 @@ app.use("/api/topics", require("./routes/topics"))
 app.use("/api/brands", require("./routes/brands"))
 app.use("/api/blogs", require("./routes/blogs"))
 app.use("/api/upload", require("./routes/upload"))
+app.use("/api/comments", require("./routes/comments"))
 
 // MongoDB connection
 mongoose
