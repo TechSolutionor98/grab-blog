@@ -447,8 +447,6 @@ const Home = () => {
             <div
               className="overflow-hidden"
               ref={viewportRef}
-              onMouseEnter={() => { if (hoverCapableRef.current) setIsPaused(true) }}
-              onMouseLeave={() => { if (hoverCapableRef.current) setIsPaused(false) }}
             >
               <div
                 ref={trackRef}
@@ -557,7 +555,7 @@ const Home = () => {
                       setIsAnimating(false)
                     }, slideDurationMs + 200)
                   }}
-      className="hidden sm:flex items-center justify-center absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 sm:opacity-100 group-hover:opacity-100 pointer-events-none sm:pointer-events-auto group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
+  className="hidden sm:flex items-center justify-center absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 pointer-events-none group-hover:pointer-events-auto focus:pointer-events-auto transition-opacity"
                 >
                   <ChevronLeft className="mx-auto" size={20} />
                 </button>
@@ -573,7 +571,7 @@ const Home = () => {
                       setIsAnimating(false)
                     }, slideDurationMs + 200)
                   }}
-      className="hidden sm:flex items-center justify-center absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 sm:opacity-100 group-hover:opacity-100 pointer-events-none sm:pointer-events-auto group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
+  className="hidden sm:flex items-center justify-center absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 pointer-events-none group-hover:pointer-events-auto focus:pointer-events-auto transition-opacity"
                 >
                   <ChevronRight className="mx-auto" size={20} />
                 </button>
