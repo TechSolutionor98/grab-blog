@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react"
 import { useParams, Link } from "react-router-dom"
 import { Calendar, User, Eye, ArrowLeft, Tag, Share2, ChevronRight } from "lucide-react"
+import { FaFacebookF, FaLinkedinIn, FaInstagram, FaPinterestP, FaYoutube } from "react-icons/fa"
+import { FaXTwitter, FaTiktok } from "react-icons/fa6"
 import RelatedPosts from "../components/RelatedPosts"
 import Comments from "../components/Comments"
 
@@ -112,6 +114,8 @@ const BlogDetail = () => {
       day: "numeric",
     })
   }
+
+  // No page-share links needed here; we mirror footer profile links
 
   if (loading) {
     return (
@@ -299,17 +303,34 @@ const BlogDetail = () => {
                   </p>
                 </div>
               </div>
-                <div className="px-8 pt-6">
-              <div className="flex items-center gap-3 text-sm text-gray-600">
-                <Share2 size={18} className="text-lime-600" />
-                <span>Share:</span>
-                <a className="hover:text-lime-600" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(blog.title)}`} target="_blank" rel="noopener noreferrer">X</a>
-                <span className="text-gray-300">|</span>
-                <a className="hover:text-lime-600" href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer">Facebook</a>
-                <span className="text-gray-300">|</span>
-                <a className="hover:text-lime-600" href={`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(window.location.href)}&title=${encodeURIComponent(blog.title)}`} target="_blank" rel="noopener noreferrer">LinkedIn</a>
-              </div>
-            </div>
+                <div className="sm:px-6 pt-6">
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <Share2 size={18} className="text-lime-600" />
+                    <span className="sr-only">Follow us</span>
+                    {[
+                      { name: 'Facebook', href: 'https://www.facebook.com/grabatozae/', Icon: FaFacebookF, color: '#1877F2' },
+                      { name: 'X', href: 'https://x.com/GrabAtoz', Icon: FaXTwitter, color: '#000000' },
+                      { name: 'Instagram', href: 'https://www.instagram.com/grabatoz/', Icon: FaInstagram, color: '#E4405F' },
+                      { name: 'LinkedIn', href: 'https://www.linkedin.com/company/grabatozae', Icon: FaLinkedinIn, color: '#0A66C2' },
+                      { name: 'Pinterest', href: 'https://www.pinterest.com/grabatoz/', Icon: FaPinterestP, color: '#E60023' },
+                      { name: 'TikTok', href: 'https://www.tiktok.com/@grabatoz', Icon: FaTiktok, color: '#000000' },
+                      { name: 'YouTube', href: 'https://www.youtube.com/@grabAtoZ', Icon: FaYoutube, color: '#FF0000' },
+                    ].map(({ name, href, Icon, color }) => (
+                      <a
+                        key={name}
+                        className="inline-flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full bg-white border border-gray-200 text-current hover:bg-gray-50 transition-colors"
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={name}
+                        title={name}
+                        style={{ color }}
+                      >
+                        <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
             </div>
             
           </article>
