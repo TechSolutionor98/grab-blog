@@ -160,16 +160,18 @@ const Header = () => {
           </div>
           <div className="flex items-center justify-end pr-1 gap-1">
            
-            <button
-              className="p-2 text-gray-700 hover:text-gray-900"
-              aria-label={isMobileSearchOpen ? "Close search" : "Search"}
-              onClick={() => {
-                setIsMobileSearchOpen((v) => !v)
-                setIsMenuOpen(false)
-              }}
-            >
-              {isMobileSearchOpen ? <X size={22} /> : <Search size={22} />}
-            </button>
+            {!isMobileSearchOpen && (
+              <button
+                className="p-2 text-gray-700 hover:text-gray-900"
+                aria-label="Search"
+                onClick={() => {
+                  setIsMobileSearchOpen(true)
+                  setIsMenuOpen(false)
+                }}
+              >
+                <Search size={22} />
+              </button>
+            )}
              <Link
               to="https://www.grabatoz.ae/"
               target="_blank"
@@ -185,22 +187,33 @@ const Header = () => {
         {isMobileSearchOpen && (
           <div className="md:hidden px-2 pb-3">
             <form onSubmit={handleSearch} className="w-full">
-              <div className="flex items-center gap-2 bg-white border border-gray-300">
+              <div className="flex items-center bg-white rounded-md overflow-hidden">
                 <input
                   type="text"
                   placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 h-10 px-3 outline-none"
+                  className="flex-1 h-10 px-3 outline-none border border-lime-300"
                   autoFocus
                 />
-                <button
-                  type="submit"
-                  aria-label="Search"
-                  className="h-10 w-12 bg-lime-500 text-white flex items-center justify-center hover:bg-lime-600 transition-colors"
-                >
-                  <Search size={16} />
-                </button>
+                <div className="flex items-center h-10 mr-1  text-white">
+                  <button
+                    type="submit"
+                    aria-label="Search"
+                    className="h-10 w-10 flex items-center justify-center bg-lime-500 hover:bg-lime-600/90"
+                  >
+                    <Search size={22} />
+                  </button>
+                  <span aria-hidden className="h-6 w-px" />
+                  <button
+                    type="button"
+                    aria-label="Close search"
+                    onClick={() => setIsMobileSearchOpen(false)}
+                    className="h-10 w-10 flex items-center justify-center text-gray-500 hover:text-gray-700 ml-1"
+                  >
+                    <X size={28} />
+                  </button>
+                </div>
               </div>
             </form>
           </div>
