@@ -550,8 +550,8 @@ const Home = () => {
           </div>
 
           {(() => {
-            const trendingList = Array.isArray(trendingBlogs) ? trendingBlogs : []
-            const scrollable = trendingList.length > 4
+            const trendingList = Array.isArray(trendingBlogs) ? trendingBlogs : [];
+            const scrollable = trendingList.length > 4;
             return (
               <div className="relative">
                 <div
@@ -590,12 +590,13 @@ const Home = () => {
                   ))}
                 </div>
 
+                {/* Show arrows on all screen sizes */}
                 {scrollable && trendCanLeft && (
                   <button
                     type="button"
                     aria-label="Scroll left"
                     onClick={() => scrollTrending("left")}
-                    className="hidden sm:flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
+                    className="flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
                   >
                     <ChevronLeft size={20} />
                   </button>
@@ -606,13 +607,13 @@ const Home = () => {
                     type="button"
                     aria-label="Scroll right"
                     onClick={() => scrollTrending("right")}
-                    className="hidden sm:flex items-center justify-center absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
+                    className="flex items-center justify-center absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors"
                   >
                     <ChevronRight size={20} />
                   </button>
                 )}
               </div>
-            )
+            );
           })()}
         </div>
       </section>
