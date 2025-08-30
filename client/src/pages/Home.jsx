@@ -18,6 +18,10 @@ const Home = () => {
   const [isAnimating, setIsAnimating] = useState(false)
   // Pause autoplay when hovering hero cards
   const [isPaused, setIsPaused] = useState(false)
+  // Only pause on hover for devices that actually support hover
+  const hoverCapableRef = useRef(false)
+  // Fallback timer to ensure we don't get stuck in isAnimating=true if transitionend is missed
+  const animTimeoutRef = useRef(null)
   // Viewport width for precise pixel math (keeps card size constant)
   const viewportRef = useRef(null)
   const trackRef = useRef(null)
@@ -61,6 +65,18 @@ const Home = () => {
     if (!el) return
     const update = () => setViewportWidth(el.clientWidth || 0)
     update()
+    // Detect hover capability (mobile devices usually report hover: none)
+    try {
+      if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
+        const mq = window.matchMedia("(hover: hover)")
+        hoverCapableRef.current = !!mq.matches
+        const onChange = (e) => {
+          hoverCapableRef.current = !!e.matches
+        }
+        if (typeof mq.addEventListener === "function") mq.addEventListener("change", onChange)
+        else if (typeof mq.addListener === "function") mq.addListener(onChange)
+      }
+    } catch {}
     let ro
     if (typeof ResizeObserver !== "undefined") {
       ro = new ResizeObserver(update)
@@ -71,6 +87,10 @@ const Home = () => {
     return () => {
       if (ro) ro.disconnect()
       else window.removeEventListener("resize", update)
+      if (animTimeoutRef.current) {
+        clearTimeout(animTimeoutRef.current)
+        animTimeoutRef.current = null
+      }
     }
   }, [])
 
@@ -224,7 +244,10 @@ const Home = () => {
     }
   }
 
-  // Auto-advance hero every 3 seconds (slides by 1 card)
+  // Auto-advance hero (faster on mobile)
+  const isMobile = itemsPerView === 1
+  const autoIntervalMs = isMobile ? 1800 : 2600
+  const slideDurationMs = isMobile ? 700 : 950
   const useLoop = featuredBlogs && featuredBlogs.length > itemsPerView
   useEffect(() => {
     if (!useLoop) return
@@ -235,9 +258,14 @@ const Home = () => {
       setIsAnimating(true)
       // Defer the index change to the next frame to avoid layout jump
       requestAnimationFrame(() => setCurrentIndex((idx) => idx + 1))
-    }, 2600)
+      // Safety: clear animating state if transitionend is missed
+      if (animTimeoutRef.current) clearTimeout(animTimeoutRef.current)
+      animTimeoutRef.current = setTimeout(() => {
+        setIsAnimating(false)
+      }, slideDurationMs + 200)
+    }, autoIntervalMs)
     return () => clearInterval(id)
-  }, [useLoop, isAnimating, isPaused])
+  }, [useLoop, isAnimating, isPaused, autoIntervalMs])
 
   // Build slides with clones at both ends for seamless loop
   const slides = (() => {
@@ -419,8 +447,8 @@ const Home = () => {
             <div
               className="overflow-hidden"
               ref={viewportRef}
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
+              onMouseEnter={() => { if (hoverCapableRef.current) setIsPaused(true) }}
+              onMouseLeave={() => { if (hoverCapableRef.current) setIsPaused(false) }}
             >
               <div
                 ref={trackRef}
@@ -433,13 +461,18 @@ const Home = () => {
                         : `translate3d(-${currentIndex * (100 / itemsPerView)}%, 0, 0)`)
                     : "translate3d(0, 0, 0)",
                   transition:
-                    `${useLoop && enableTransition ? "transform 950ms cubic-bezier(0.2, 0.85, 0.2, 1)," : ""} margin 240ms ease-out`,
+                    `${useLoop && enableTransition ? `transform ${slideDurationMs}ms cubic-bezier(0.2, 0.85, 0.2, 1),` : ""} margin 240ms ease-out`,
                   willChange: "transform",
                   marginLeft: isAnimating ? -gapPx / 2 : 0,
                   marginRight: isAnimating ? -gapPx / 2 : 0,
                 }}
                 onTransitionEnd={() => {
                   if (!useLoop) return
+                  // Clear safety timer if it exists
+                  if (animTimeoutRef.current) {
+                    clearTimeout(animTimeoutRef.current)
+                    animTimeoutRef.current = null
+                  }
                   if (currentIndex >= featuredBlogs.length + itemsPerView) {
                     setEnableTransition(false)
                     setCurrentIndex(itemsPerView)
@@ -509,7 +542,7 @@ const Home = () => {
                   ))}
               </div>
             </div>
-            {/* Slider Arrows outside cards (show on all screens) */}
+    {/* Slider Arrows outside cards (hidden on mobile, visible on sm+ screens) */}
             {useLoop && (
               <>
                 <button
@@ -519,8 +552,12 @@ const Home = () => {
                     if (isAnimating) return
                     setIsAnimating(true)
                     setCurrentIndex((idx) => idx - 1)
+                    if (animTimeoutRef.current) clearTimeout(animTimeoutRef.current)
+                    animTimeoutRef.current = setTimeout(() => {
+                      setIsAnimating(false)
+                    }, slideDurationMs + 200)
                   }}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
+      className="hidden sm:flex items-center justify-center absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 sm:opacity-100 group-hover:opacity-100 pointer-events-none sm:pointer-events-auto group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
                 >
                   <ChevronLeft className="mx-auto" size={20} />
                 </button>
@@ -531,8 +568,12 @@ const Home = () => {
                     if (isAnimating) return
                     setIsAnimating(true)
                     setCurrentIndex((idx) => idx + 1)
+                    if (animTimeoutRef.current) clearTimeout(animTimeoutRef.current)
+                    animTimeoutRef.current = setTimeout(() => {
+                      setIsAnimating(false)
+                    }, slideDurationMs + 200)
                   }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
+      className="hidden sm:flex items-center justify-center absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 shadow hover:bg-white text-gray-700 hover:text-gray-900 transition-colors opacity-0 sm:opacity-100 group-hover:opacity-100 pointer-events-none sm:pointer-events-auto group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity"
                 >
                   <ChevronRight className="mx-auto" size={20} />
                 </button>
