@@ -353,7 +353,7 @@ const Home = () => {
             <main className="flex-1">
               {/* Page Header */}
               <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{getPageTitle()}</h1>
+                <h1 className="text-lg sm:text-3xl font-bold text-gray-900 sm:mb-2">{getPageTitle()}</h1>
                 {pagination.total && (
                   <p className="text-gray-600">
                     {pagination.total} blog{pagination.total !== 1 ? "s" : ""} found

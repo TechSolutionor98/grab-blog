@@ -91,7 +91,7 @@ const Category = () => {
               {category.name}
             </span>
           </div> */}
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">{category.name} Blogs</h1>
+          <h1 className="sm:text-4xl text-lg font-bold text-gray-900 sm:mb-4">{category.name} Blogs</h1>
           {/* Description removed per request */}
           {pagination.total && (
             <p className="text-gray-500">
