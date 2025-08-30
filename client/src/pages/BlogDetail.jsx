@@ -171,11 +171,11 @@ const BlogDetail = () => {
             )}
           </ol>
         </nav>
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8">
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 bg-white">
           {/* Main */}
           <article className="bg-white rounded-lg  overflow-hidden">
             {/* Header */}
-            <header className="px-8 py-8 border-b border-gray-200">
+            <header className="sm:px-8 sm:py-8 px-2 py-2 border-b border-gray-200">
               {/* Main image first */}
               {blog.featuredImage?.url && (
                 <div className="mb-6 rounded-lg overflow-hidden bg-gray-100">
@@ -194,22 +194,22 @@ const BlogDetail = () => {
                   {blog.category?.name}
                 </span>
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 leading-tight">{blog.title}</h1>
+              <h1 className="text-lg sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 leading-tight">{blog.title}</h1>
               {blog.excerpt && <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-4">{blog.excerpt}</p>}
               <div className="flex flex-wrap items-center gap-6 text-gray-600">
                 <div className="flex items-center space-x-2">
                   <Calendar size={18} />
                   <span>{formatDate(blog.publishedAt || blog.createdAt)}</span>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-0">
                   <User size={18} />
                   <span>By {blog.author?.username || "Anonymous"}</span>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 sm:mb-0 mb-4">
                   <Eye size={18} />
                   <span>{blog.views || 0} views</span>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 sm:mb-0 mb-4">
                   <span className="inline-block w-2 h-2 rounded-full bg-lime-500" />
                   <span>{readingMinutes} minutes read</span>
                 </div>
@@ -220,7 +220,7 @@ const BlogDetail = () => {
           
 
             {/* Content */}
-            <div className="px-8 py-6">
+            <div className="sm:px-8 sm:py-6 px-2 py-2">
               <div
                 className="prose prose-lg max-w-none text-gray-800 leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: contentHtml || blog.content }}
@@ -281,7 +281,7 @@ const BlogDetail = () => {
 
 
             {/* Author Info */}
-            <div className="px-8 py-6 border-t border-gray-200 bg-white">
+            <div className="sm:px-8  sm:py-6 px-2 pt-4 border-t border-gray-200 bg-white">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                <div className="w-16 h-16 bg-lime-500 rounded-full flex items-center justify-center">
@@ -355,7 +355,7 @@ const BlogDetail = () => {
             )}
 
             {/* Author card small */}
-            <div className="bg-white rounded-lg p-5">
+            <div className="bg-white rounded-lg sm:p-5">
               <div className="flex items-center gap-3">
                 {blog.author?.avatar && !String(blog.author.avatar).includes("via.placeholder.com") ? (
                   <img src={blog.author.avatar} alt={blog.author?.username} className="w-12 h-12 rounded-full object-cover" />
@@ -373,7 +373,7 @@ const BlogDetail = () => {
 
             {/* Recent posts */}
             {recent.length > 0 && (
-              <div className="bg-white rounded-lg p-5">
+              <div className="bg-white rounded-lg  sm:p-5">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Recent posts</h3>
                 <ul className="space-y-3">
                   {recent.map((p) => (
@@ -405,7 +405,7 @@ const BlogDetail = () => {
 
 
            {/* Comments Section */}
-        <div className="mt-12 bg-white rounded-lg  p-8">
+        <div className="mt-12 bg-white rounded-lg p-2 sm:p-8">
           <Comments blogId={blog._id} blogTitle={blog.title} />
         </div>
 
