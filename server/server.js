@@ -8,8 +8,23 @@ dotenv.config()
 
 const app = express()
 
+// Enhanced CORS configuration
+const corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:5173", // Vite dev server
+    "http://localhost:4173", // Vite preview
+    "https://www.blog.grabatoz.ae", // Replace with your actual Vercel frontend URL
+    
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}
+
 // Middleware
-app.use(cors())
+app.use(cors(corsOptions))
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 
@@ -36,7 +51,7 @@ app.get("/", (req, res) => {
   res.json({ message: "Blog API Server Running" })
 })
 
-const PORT =3000
+const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
